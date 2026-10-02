@@ -1,0 +1,56 @@
+name: Deploy staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eventportal-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check whether Cloudflare is configured
+        id: credentials
+        shell: bash
+        run: |
+          if [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] && [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then echo "cloudflare=true" >> "$GITHUB_OUTPUT";
+          else echo "cloudflare=false" >> "$GITHUB_OUTPUT"; echo "Cloudflare credentials are not configured yet; deploy is skipped safely."; fi
+      - uses: actions/setup-node@v7
+        if: steps.credentials.outputs.cloudflare == 'true'
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - if: steps.credentials.outputs.cloudflare == 'true'
+        run: corepack enable && corepack prepare pnpm@12.3.4 --activate && pnpm install --frozen-lockfile && pnpm typecheck && pnpm test
+      - name: Resolve or create the staging D1 database
+        if: steps.credentials.outputs.cloudflare == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          find_id() { pnpm exec wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{const l=JSON.parse(s);const a=Array.isArray(l)?l:(l.result??[]);const d=a.find(x=>(x.name??x.database_name)==="eventportal-staging");process.stdout.write(d?(d.uuid??d.database_id??""):"")})'; }
+          ID="$(find_id)"
+          if [ -z "$ID" ]; then pnpm exec wrangler d1 create eventportal-staging --location weur >/dev/null; ID="$(find_id)"; fi
+          test -n "$ID"
+          sed -i "s/SET-BY-DEPLOY/$ID/" wrangler.jsonc
+      - name: Apply migrations
+        if: steps.credentials.outputs.cloudflare == 'true'
+        run: pnpm exec wrangler d1 migrations apply eventportal-staging --remote --env staging
+      - name: Deploy
+        if: steps.credentials.outputs.cloudflare == 'true'
+        run: pnpm run deploy:staging
+      - name: Set the administration password
+        if: steps.credentials.outputs.cloudflare == 'true' && env.ADMIN_PASSWORD != ''
+        run: printf '%s' "$ADMIN_PASSWORD" | pnpm exec wrangler secret put ADMIN_PASSWORD --env staging >/dev/null

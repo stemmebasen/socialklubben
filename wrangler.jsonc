@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "eventportal",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "assets": { "directory": "./public" },
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "vars": {
+    "SITE_NAME": "Eventportal"
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "eventportal-local", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+  ],
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "eventportal-staging",
+      "vars": { "SITE_NAME": "Eventportal" },
+      "triggers": { "crons": ["*/15 * * * *"] },
+      "d1_databases": [
+        { "binding": "DB", "database_name": "eventportal-staging", "database_id": "SET-BY-DEPLOY", "migrations_dir": "migrations" }
+      ]
+    }
+  }
+}
