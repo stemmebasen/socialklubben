@@ -1,6 +1,8 @@
 # Eventportal (working title)
 
-A neutral, region-by-region overview of events within spirituality, personal development and mental health. It starts with Østjylland. The site belongs to no organizer: it reads each organizer's own public calendar (iCal or RSS) and shows every organizer's events on equal terms, by time, on a list and a map with a radius. Signup and payment always happen at the organizer.
+A curated, neutral overview of events within mental health, personal development and spirituality, starting with Østjylland. It belongs to no organizer. It reads each chosen organizer's own public calendar (iCal or RSS) and shows every organizer's events alike, by time, on a list and a map with a radius. Signup and payment always happen at the organizer.
+
+The website is the backbone of a wider presence: partner venues in the city, posters and brochures in public space, and a social media profile (`docs/BLUEPRINT.md`, sections 2 and 7). The site's tone is professional, modern and elegant, not spiritual.
 
 The name is still to be chosen. It is set in one place: the `SITE_NAME` variable in `wrangler.jsonc`.
 

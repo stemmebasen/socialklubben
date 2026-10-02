@@ -77,7 +77,7 @@ describe("the portal", () => {
     expect(text).not.toContain("Meditation i København");
     expect(text).toContain("Hjerterum · Guldsmedgade 26B, 8000 Aarhus C");
     expect(text).toContain("150 kr.");
-    expect(text).toContain("Spiritualitet &amp; ceremoni");
+    expect(text).toContain(">Spiritualitet</span>");
     // Text from a calendar is never markup.
     expect(text).not.toContain("gongs <3");
     expect(text).toContain("Lydbad med gongs &lt;3 &amp; &quot;ro&quot;");
@@ -125,6 +125,7 @@ describe("the portal", () => {
     expect(organizers).toContain("2 kommende");
     const about = await (await call("/om")).text();
     expect(about).toContain("tilhører ingen bestemt forening");
+    expect(about).toContain("udvalgt efter relevans og kvalitet");
     expect(about).toContain("mailto:hej@portal.example");
     expect(await (await call("/robots.txt")).text()).toContain("Disallow: /admin");
     expect((await (await call("/sitemap.xml")).text()).match(/<loc>/g)!.length).toBe(3 + 4);

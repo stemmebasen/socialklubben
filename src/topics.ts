@@ -9,10 +9,14 @@ export const TOPICS: Topic[] = [
   { slug: "meditation", label: "Meditation & mindfulness", words: ["meditation", "mediter", "mindfulness", "stilhed", "nærvær", "retreat", "vipassana", "yoga nidra"] },
   { slug: "lyd", label: "Lyd & musik", words: ["lydbad", "lydhealing", "lydrejse", "gong", "kirtan", "mantra", "sangcirkel", "fællessang", "tromme", "sound bath", "sound healing", "klangskål", "syngeskål"] },
   { slug: "krop", label: "Krop & bevægelse", words: ["yoga", "qigong", "qi gong", "tai chi", /dans(?!k)/iu, "ecstatic", "5rhythms", "breathwork", "åndedræt", "bevægelse", "pilates", "kropsterapi", "somatic", "somatisk"] },
-  { slug: "spiritualitet", label: "Spiritualitet & ceremoni", words: ["ceremoni", "kakao", "cacao", "fuldmåne", "nymåne", "shaman", "spirituel", /sjæl(?!d)/iu, "astrologi", "tarot", "healing", "reiki", "channeling", "ritual"] },
-  { slug: "cirkler", label: "Cirkler & fællesskab", words: ["cirkel", "kvindecirkel", "mandecirkel", "samtalesalon", "fællesskab", "medlemscafé", "café", "sharing"] },
-  { slug: "udvikling", label: "Selvudvikling & kurser", words: ["workshop", "kursus", "foredrag", "coaching", "selvudvikling", "uddannelse", "forløb", "personlig udvikling"] }
+  { slug: "spiritualitet", label: "Spiritualitet", words: ["ceremoni", "kakao", "cacao", "fuldmåne", "nymåne", "shaman", "spirituel", /sjæl(?!d)/iu, "astrologi", "tarot", "healing", "reiki", "channeling", "ritual"] },
+  { slug: "cirkler", label: "Fællesskab", words: ["cirkel", "kvindecirkel", "mandecirkel", "samtalesalon", "fællesskab", "medlemscafé", "café", "sharing"] },
+  { slug: "udvikling", label: "Selvudvikling", words: ["workshop", "kursus", "foredrag", "coaching", "selvudvikling", "uddannelse", "forløb", "personlig udvikling"] }
 ];
+
+/** The order the themes are shown in: plain, professional framing first. (TOPICS' own order is the order
+ * they are matched in, which must stay as it is.) */
+export const SHOWN_TOPICS = ["mental-sundhed", "udvikling", "krop", "meditation", "lyd", "cirkler", "spiritualitet"].map(slug => TOPICS.find(t => t.slug === slug)!);
 
 export const topicLabel = (slug: string) => TOPICS.find(t => t.slug === slug)?.label ?? "Andet";
 export const isTopic = (slug: string) => TOPICS.some(t => t.slug === slug);

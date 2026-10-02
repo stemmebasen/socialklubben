@@ -2,7 +2,7 @@ import { siteName, type Env } from "../env.js";
 import { WHEN, type Filter, type ShownEvent, type When } from "../events.js";
 import { formatKm, RADII, type Region, type Town } from "../geo.js";
 import { formatKrMinor } from "../price.js";
-import { TOPICS, topicLabel } from "../topics.js";
+import { SHOWN_TOPICS, topicLabel } from "../topics.js";
 import { clock, dayLabel, esc, page, scriptJson, slug } from "./layout.js";
 
 /** A region's calendar: the filters, the list by day and the map with the chosen radius. Everything is in
@@ -68,7 +68,7 @@ export function regionPage(env: Env, origin: string, v: RegionView): string {
   };
   const chip = (href: string, label: string, on: boolean) => `<a href="${esc(href)}"${on ? ' class="on" aria-current="true"' : ""}>${esc(label)}</a>`;
   const whenChips = WHEN.map(w => chip(params({ nar: w.slug === "maaned" ? null : w.slug }), w.label, f.when === w.slug)).join("");
-  const topicChips = chip(params({ tema: null }), "Alle temaer", !f.topic) + TOPICS.map(t => chip(params({ tema: t.slug }), t.label, f.topic === t.slug)).join("");
+  const topicChips = chip(params({ tema: null }), "Alle temaer", !f.topic) + SHOWN_TOPICS.map(t => chip(params({ tema: t.slug }), t.label, f.topic === t.slug)).join("");
   const keep = (name: string, value: string | null) => value ? `<input type="hidden" name="${name}" value="${esc(value)}">` : "";
   const place = `<form class="place" method="get" action="/${esc(r.slug)}">${keep("nar", f.when === "maaned" ? null : f.when)}${keep("tema", f.topic)}${keep("arr", v.sourceId ? String(v.sourceId) : null)}
 <input type="hidden" name="lat" value="${v.nearMe && f.center ? f.center.lat.toFixed(3) : ""}" data-near="lat"><input type="hidden" name="lng" value="${v.nearMe && f.center ? f.center.lng.toFixed(3) : ""}" data-near="lng">
@@ -103,11 +103,11 @@ ${list.map(e => eventLine(r.slug, e, v.nowMs)).join("")}</section>`).join("")}</
   const map = { center, zoom: f.center && f.km ? (f.km <= 5 ? 12 : f.km <= 10 ? 11 : f.km <= 25 ? 10 : 9) : 9, radiusKm: f.center && f.km ? f.km : null, fit: !f.center,
     tiles: env.MAP_TILES || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: env.MAP_ATTRIBUTION || "© OpenStreetMap", points: [...points.values()] };
 
-  const title = `Spiritualitet, selvudvikling og mental sundhed ${where} · ${siteName(env)}`;
+  const title = `Foredrag, kurser og workshops ${where} · ${siteName(env)}`;
   return page(env, origin, { title, path: `/${r.slug}`, section: "kalender", regionSlug: r.slug, regionName: r.name,
-    description: `Det sker ${where}: meditation, yoga, lydbad, cirkler, kurser og mental sundhed - samlet fra arrangørernes egne kalendere, med kort.`,
+    description: `Foredrag, kurser og workshops inden for mental sundhed, selvudvikling og spiritualitet ${where} - samlet ét sted, med kort.`,
     head: `<link rel="stylesheet" href="/vendor/leaflet/leaflet.css"><style>${STYLE}</style>`, scripts: ["/vendor/leaflet/leaflet.js", "/map.js"],
-    body: `<main><div class="hero"><h1>Det sker ${esc(where)}</h1><p class="lead">Spiritualitet, selvudvikling og mental sundhed - samlet fra arrangørernes egne kalendere. Tilmelding sker hos arrangøren.</p></div>
+    body: `<main><div class="hero"><h1>Det sker ${esc(where)}</h1><p class="lead">Foredrag, kurser og workshops inden for mental sundhed, selvudvikling og spiritualitet - samlet ét sted. Tilmelding sker hos arrangøren.</p></div>
 <div class="filters"><nav class="chips" aria-label="Hvornår">${whenChips}</nav><nav class="chips" aria-label="Tema">${topicChips}</nav>${place}</div>
 ${count}<div class="layout"><div>${list}</div><div class="map-wrap"><div id="map" aria-label="Kort over events"></div><noscript>Kortet kræver JavaScript. Listen viser alle events.</noscript></div></div>
 <script type="application/json" id="map-data">${scriptJson(map)}</script></main>` });

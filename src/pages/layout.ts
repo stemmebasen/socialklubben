@@ -1,8 +1,9 @@
 import { siteName, type Env } from "../env.js";
 
-/** Every page's frame, in the same design language as Hjerterum's board cockpit (cool paper, white cards,
- * deep ink, one cobalt accent, Bricolage Grotesque, pill buttons, a glass header, a soft glow) - but with
- * no organizer's name or logo: the portal belongs to no one. */
+/** Every page's frame. The cockpit's clean system - cool paper, white cards, deep ink, one cobalt accent,
+ * Bricolage Grotesque, pill buttons, a glass header - without its soft glow: requested, "siden må ikke have
+ * en spirituel vibe, den skal være professionel, moderne og elegant". No aura colours, no ornaments, a plain
+ * wordmark; and no organizer's name or logo: the portal belongs to no one. */
 
 export const esc = (value: unknown) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
@@ -12,19 +13,17 @@ export const scriptJson = (data: unknown) => JSON.stringify(data).replace(/</g, 
 export const STYLE = `
 :root{--bg:#eef1f4;--card:#fff;--ink:#16202e;--muted:#5a6675;--faint:#7d8896;--line:#dce2e9;--accent:#2446d8;--accent-ink:#fff;--soft:#f1f4f8;--tint:#e8edfd;
 --shadow:0 1px 2px rgba(22,32,46,.04),0 10px 30px -18px rgba(22,32,46,.18);--radius:20px;
---glow-1:rgb(36 70 216 / .16);--glow-2:rgb(124 92 255 / .13);--glow-3:rgb(40 190 225 / .12);--font:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light dark}
+--font:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:light dark}
 @media (prefers-color-scheme:dark){:root{--bg:#121821;--card:#1a222d;--ink:#e8edf3;--muted:#9aa6b4;--faint:#748191;--line:#2a3441;--accent:#7c93ff;--accent-ink:#0e1522;--soft:#212a36;--tint:#1f2a4a;
---shadow:none;--glow-1:rgb(61 91 255 / .26);--glow-2:rgb(139 107 255 / .20);--glow-3:rgb(43 179 217 / .16)}}
+--shadow:none}}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font);font-optical-sizing:auto;-webkit-font-smoothing:antialiased;overflow-x:clip;position:relative;isolation:isolate}
-body::before{content:"";position:absolute;z-index:-1;top:-160px;right:0;width:min(980px,100%);height:760px;pointer-events:none;filter:blur(10px);
-background:radial-gradient(closest-side at 38% 42%,var(--glow-2),transparent 72%),radial-gradient(closest-side at 64% 36%,var(--glow-1),transparent 70%),radial-gradient(closest-side at 72% 66%,var(--glow-3),transparent 70%)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font);font-optical-sizing:auto;-webkit-font-smoothing:antialiased;overflow-x:clip}
 a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:.2em}:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
 header.bar{position:sticky;top:0;z-index:1000}
 header.bar::before{content:"";position:absolute;inset:0;z-index:-1;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
 .top{max-width:1240px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:20px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);white-space:nowrap}.brand svg{flex:none}
-.brand b{font-weight:700;font-size:18px;letter-spacing:-.01em}.brand span{font-size:12.5px;color:var(--muted);font-weight:500;display:block;line-height:1}
+.brand{display:flex;align-items:baseline;gap:12px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.brand b{font-weight:700;font-size:19px;letter-spacing:-.02em}.brand span{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.14em}
 nav.main{display:flex;gap:4px;margin-left:auto}nav.main a{padding:8px 14px;border-radius:999px;text-decoration:none;color:var(--ink);font-weight:500;font-size:15px;white-space:nowrap}
 nav.main a:hover{color:var(--accent)}nav.main a.on{background:var(--card);box-shadow:var(--shadow);font-weight:600}
 main{max-width:1240px;margin:0 auto;padding:32px 24px 72px;display:grid;gap:20px}
@@ -46,10 +45,6 @@ footer.site a{color:var(--muted)}
 [hidden]{display:none!important}
 @media (max-width:720px){.top{padding:10px 16px;gap:10px}nav.main a.cal{display:none}.brand b{max-width:46vw;overflow:hidden;text-overflow:ellipsis;display:block}.brand span{display:none}nav.main a{padding:7px 10px;font-size:14px}main{padding:22px 16px 56px}footer.site{padding:24px 16px 40px}.card{padding:20px 18px}}`;
 
-/** A mark of concentric rings - the radius on the map - in the accent colour. */
-const MARK = `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15.5" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".35"/>
-<circle cx="17" cy="17" r="10" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".65"/><circle cx="17" cy="17" r="4.5" fill="var(--accent)"/></svg>`;
-
 export type PageOptions = {
   title: string; description: string; path: string; body: string; section?: "kalender" | "arrangorer" | "om" | null; regionSlug?: string; regionName?: string;
   head?: string; noindex?: boolean; scripts?: string[];
@@ -67,7 +62,7 @@ export function page(env: Env, origin: string, o: PageOptions): string {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&display=swap">${o.head ?? ""}
 <style>${STYLE}</style></head><body>
-<header class="bar"><div class="top"><a class="brand" href="/${esc(region)}">${MARK}<div><b>${esc(name)}</b><span>${esc(o.regionName ?? "Østjylland")}</span></div></a>
+<header class="bar"><div class="top"><a class="brand" href="/${esc(region)}"><b>${esc(name)}</b><span>${esc(o.regionName ?? "Østjylland")}</span></a>
 <nav class="main" aria-label="Menu">${nav("kalender", `/${esc(region)}`, "Kalender", "cal")}${nav("arrangorer", `/${esc(region)}/arrangorer`, "Arrangører")}${nav("om", "/om", "Om")}</nav></div></header>
 ${o.body}
 <footer class="site"><span>${esc(name)} er en uafhængig oversigt. Alt kommer fra arrangørernes egne kalendere, og tilmelding sker altid hos arrangøren.</span>
