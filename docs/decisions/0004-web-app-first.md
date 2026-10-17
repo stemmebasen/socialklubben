@@ -15,4 +15,4 @@ The chair asked how the portal becomes an app.
 ## Consequences
 
 - No separate code to keep up: the website is the app.
-- The manifest names the portal "Eventportal" until the final name is chosen; the name, icon and colours change with it.
+- The manifest names the app "Socialklubben" (decision 0006).

@@ -54,7 +54,7 @@ export function planPage(env: Env, origin: string, v: RegionView): string {
   };
   const chip = (href: string, label: string, on: boolean) => `<a href="${esc(href)}"${on ? ' class="on" aria-current="true"' : ""}>${esc(label)}</a>`;
   const whenChips = WHEN.map(w => chip(params({ nar: w.slug === "maaned" ? null : w.slug }), w.label, f.when === w.slug)).join("");
-  const topicChips = chip(params({ tema: null }), "Alle temaer", !f.topic) + SHOWN_TOPICS.map(t => chip(params({ tema: t.slug }), t.label, f.topic === t.slug)).join("");
+  const topicChips = chip(params({ tema: null }), "Alle kategorier", !f.topic) + SHOWN_TOPICS.map(t => chip(params({ tema: t.slug }), t.label, f.topic === t.slug)).join("");
   const keep = (name: string, value: string | null) => value ? `<input type="hidden" name="${name}" value="${esc(value)}">` : "";
   const place = `<form class="place" method="get" action="/${esc(r.slug)}/planlaeg">${keep("nar", f.when === "maaned" ? null : f.when)}${keep("tema", f.topic)}${keep("arr", v.sourceId ? String(v.sourceId) : null)}
 <input type="hidden" name="lat" value="${v.nearMe && f.center ? f.center.lat.toFixed(3) : ""}" data-near="lat"><input type="hidden" name="lng" value="${v.nearMe && f.center ? f.center.lng.toFixed(3) : ""}" data-near="lng">
@@ -75,14 +75,14 @@ export function planPage(env: Env, origin: string, v: RegionView): string {
   }
   const list = v.events.length ? `<div class="plan">${[...days.values()].map(list => `<h2 class="day-head">${esc(heading(Math.max(list[0]!.starts_at_ms, v.nowMs), v.nowMs))}</h2>
 <ul class="rows">${list.map(e => eventRow(e, eventPath(r.slug, e), placeText(e))).join("")}</ul>`).join("")}</div>`
-    : `<div class="card"><h2>Ingen events med de valg</h2><p class="muted">Prøv en større radius, en længere periode eller alle temaer.</p><p><a class="button ghost" href="/${esc(r.slug)}/planlaeg">Nulstil filtre</a></p></div>`;
+    : `<div class="card"><h2>Ingen events med de valg</h2><p class="muted">Prøv en større radius, en længere periode eller alle kategorier.</p><p><a class="button ghost" href="/${esc(r.slug)}/planlaeg">Nulstil filtre</a></p></div>`;
 
-  const title = `Foredrag, kurser og workshops ${where} · ${siteName(env)}`;
+  const title = `Det sker ${where} · ${siteName(env)}`;
   return page(env, origin, { title, path: `/${r.slug}/planlaeg`, section: "planlaeg", regionSlug: r.slug, regionName: r.name,
-    description: `Foredrag, kurser og workshops inden for mental sundhed, selvudvikling og spiritualitet ${where} - samlet ét sted, med kort.`,
+    description: `Koncerter, teater, udstillinger, foredrag, fællesspisning og meget mere ${where} - dag for dag.`,
     head: `<style>${STYLE}</style>`,
     body: `<main><div class="hero"><h1>Planlæg</h1><p class="lead" style="margin:0">Det sker ${esc(where)}</p></div>
-<div class="filters"><nav class="chips" aria-label="Hvornår">${whenChips}</nav><nav class="chips" aria-label="Tema">${topicChips}</nav>${place}</div>
+<div class="filters"><nav class="chips" aria-label="Hvornår">${whenChips}</nav><nav class="chips" aria-label="Kategori">${topicChips}</nav>${place}</div>
 ${count}${list}</main>` });
 }
 

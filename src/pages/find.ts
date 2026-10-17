@@ -29,12 +29,12 @@ function grouped(region: Region, events: ShownEvent[], nowMs: number): string {
 export function searchPage(env: Env, origin: string, region: Region, query: string, events: ShownEvent[] | null, nowMs: number): string {
   const found = events ?? [];
   const results = events === null
-    ? `<div class="hint"><p class="muted" style="margin:0">Søg efter et emne, en underviser, et sted eller en arrangør - eller vælg et tema:</p>
-<nav class="chips" aria-label="Temaer">${SHOWN_TOPICS.map(t => `<a data-t="${t.slug}" href="/${esc(region.slug)}/planlaeg?nar=alle&amp;tema=${t.slug}">${esc(t.label)}</a>`).join("")}</nav></div>`
+    ? `<div class="hint"><p class="muted" style="margin:0">Søg efter et emne, en kunstner, et sted eller en arrangør - eller vælg en kategori:</p>
+<nav class="chips" aria-label="Kategorier">${SHOWN_TOPICS.map(t => `<a data-t="${t.slug}" href="/${esc(region.slug)}/planlaeg?nar=alle&amp;tema=${t.slug}">${esc(t.label)}</a>`).join("")}</nav></div>`
     : found.length ? `<p class="muted" style="margin:0">${found.length} kommende event${found.length === 1 ? "" : "s"} for "${esc(query)}"</p><div>${grouped(region, found, nowMs)}</div>`
     : `<div class="card empty">${icon("sog", 34)}<h2>Intet fundet</h2><p>Ingen kommende events matcher "${esc(query)}". Prøv et andet ord, eller se alt i Planlæg.</p></div>`;
   return page(env, origin, { title: `${query ? `${query} · ` : ""}Søg · ${siteName(env)}`, path: `/${region.slug}/sog`, section: "sog", regionSlug: region.slug, regionName: region.name,
-    description: `Søg i foredrag, kurser og workshops i ${region.name}.`, noindex: Boolean(query), head: `<style>${STYLE}</style>`,
+    description: `Søg i alt, hvad der sker i ${region.name}.`, noindex: Boolean(query), head: `<style>${STYLE}</style>`,
     body: `<main class="find"><h1>Søg</h1><form class="search" method="get" action="/${esc(region.slug)}/sog" role="search">
 <input type="search" name="q" value="${esc(query)}" placeholder="Fx yoga, sorg, Silkeborg …" aria-label="Søg" enterkeyhint="search" autocomplete="off"${query ? "" : " autofocus"}><button type="submit">Søg</button></form>
 ${results}</main>` });

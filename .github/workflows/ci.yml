@@ -25,5 +25,5 @@ jobs:
       - run: pnpm test
       - name: Apply migrations to a local D1 and build the Worker
         run: |
-          pnpm exec wrangler d1 migrations apply eventportal-local --local --persist-to .d1-ci
+          pnpm exec wrangler d1 migrations apply socialklubben-local --local --persist-to .d1-ci
           pnpm build

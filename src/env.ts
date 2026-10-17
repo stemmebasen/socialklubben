@@ -22,4 +22,4 @@ export interface Deps {
   sleep: (ms: number) => Promise<void>;
 }
 
-export const siteName = (env: Env) => env.SITE_NAME?.trim() || "Eventportal";
+export const siteName = (env: Env) => env.SITE_NAME?.trim() || "Socialklubben";

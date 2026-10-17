@@ -1,10 +1,10 @@
-# Eventportal (working title)
+# Socialklubben
 
-A curated, neutral overview of events within mental health, personal development and spirituality, starting with Østjylland. It belongs to no organizer. It reads each chosen organizer's own public calendar (iCal or RSS) and shows every organizer's events alike, by time, on a list and a map with a radius. Signup and payment always happen at the organizer.
+Socialklubben.dk: the cultural life of Østjylland in one place (music, stage, film, art, talks, food, sport, workshops, communities and more), and a place to join a circle and go to events together (the circle part is not decided yet). It is a curated, neutral overview. It belongs to no organizer. It reads each chosen organizer's own public calendar (iCal or RSS) and shows every organizer's events alike, by time, on a list and a map with a radius. Signup and payment always happen at the organizer.
 
-The website is the backbone of a wider presence: partner venues in the city, posters and brochures in public space, and a social media profile (`docs/BLUEPRINT.md`, sections 2 and 7). The site's tone is professional, modern and elegant, not spiritual.
+The website is the backbone of a wider presence: partner venues in the city, posters and brochures in public space, and a social media profile (`docs/BLUEPRINT.md`, sections 2 and 7). The site's tone is professional, modern and elegant.
 
-The name is still to be chosen. It is set in one place: the `SITE_NAME` variable in `wrangler.jsonc`.
+The name is set in one place: the `SITE_NAME` variable in `wrangler.jsonc` (and the app manifest in `public/`).
 
 - `docs/BLUEPRINT.md` is the product and technical source of truth.
 - `docs/decisions/` holds the decision records.

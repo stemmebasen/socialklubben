@@ -25,7 +25,7 @@ export function findsPage(env: Env, data: { finds: Array<Candidate & { site_url:
     return `<option value="ny"${match ? "" : " selected"}>Ny arrangør (navnet herunder)</option>${data.sources.map(s => `<option value="${s.id}"${match?.id === s.id ? " selected" : ""}>${esc(s.name)}${s.kind === "manual" ? "" : " (har kalender)"}</option>`).join("")}`;
   };
   const items = data.finds.map(c => {
-    const topic = topicFor(c.title, c.description, "udvikling");
+    const topic = topicFor(c.title, c.description, "faellesskab");
     const origin = c.origin === "tip" ? `Tip${c.contact ? ` fra ${esc(c.contact)}` : ""}` : `Scanner: ${esc(c.site_name || c.site_url || "")}`;
     const facts = [when(c), c.location, c.organizer, c.price_minor === null ? null : c.price_minor === 0 ? "Gratis" : formatKrMinor(c.price_minor)].filter(Boolean).map(esc).join(" · ");
     return `<article class="card find"><span class="origin">${origin}</span><h2>${esc(c.title)}</h2><p class="facts">${facts}${c.link ? ` · <a href="${esc(c.link)}" rel="noopener noreferrer" target="_blank">Se siden ↗</a>` : ""}</p>
@@ -33,7 +33,7 @@ ${c.duplicate_of ? `<p class="dup">Ligner et event, der allerede vises (samme ti
 ${c.description ? `<p class="text">${esc(c.description)}</p>` : ""}
 <form method="post" action="/admin/fund/${c.id}"><div class="row3"><label>Arrangør<select name="source">${sourceOptions(c)}</select></label>
 <label>Ny arrangørs navn<input name="new_name" maxlength="120" value="${esc(c.organizer ?? "")}"></label>
-<label>Tema<select name="topic">${TOPICS.map(t => `<option value="${t.slug}"${t.slug === topic ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select></label></div>
+<label>Kategori<select name="topic">${TOPICS.map(t => `<option value="${t.slug}"${t.slug === topic ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select></label></div>
 <label>Adresse til kortet (tom = arrangørens eller den, der står)<input name="address" maxlength="200" value="${esc(c.location && /\d/.test(c.location) ? c.location : "")}"></label>
 <div class="acts"><button name="action" value="approve">Vis på portalen</button><button class="ghost" name="action" value="reject">Afvis</button></div></form></article>`;
   }).join("");

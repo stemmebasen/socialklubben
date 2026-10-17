@@ -18,7 +18,7 @@ const ZONE = "Europe/Copenhagen";
 const MAX_PAGE_BYTES = 2_000_000;
 const SITES_PER_RUN = 5;
 const RESCAN_DAYS = 7;
-export const USER_AGENT = "Eventportal-scanner (læser offentlige eventsider en gang om ugen)";
+export const USER_AGENT = "Socialklubben-scanner (læser offentlige eventsider en gang om ugen)";
 
 export type Found = {
   title: string; startsAtMs: number; endsAtMs: number | null; allDay: boolean; location: string | null; description: string | null;
@@ -155,7 +155,7 @@ export function robotsAllow(robots: string, path: string): boolean {
       lastWasAgent = false;
     }
   }
-  const mine = groups.filter(g => g.agents.some(a => a !== "*" && "eventportal-scanner".includes(a)));
+  const mine = groups.filter(g => g.agents.some(a => a !== "*" && "socialklubben-scanner".includes(a)));
   const rules = (mine.length ? mine : groups.filter(g => g.agents.includes("*"))).flatMap(g => g.rules);
   let best: { allow: boolean; length: number } = { allow: true, length: -1 };
   for (const rule of rules) {
