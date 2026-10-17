@@ -15,12 +15,12 @@ const ADMIN_STYLE = `
 .bad{color:#a4501a}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.stats div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .stats b{display:block;font-size:24px}.stats span{font-size:13px;color:var(--muted)}`;
 
-export function adminPage(env: Env, title: string, body: string, section: "kilder" | "steder" | null): string {
+export function adminPage(env: Env, title: string, body: string, section: "kilder" | "fund" | "scanner" | "steder" | null): string {
   const nav = (key: string, href: string, label: string) => `<a href="${href}"${section === key ? ' class="on"' : ""}>${label}</a>`;
   return `<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>${esc(title)} · ${esc(siteName(env))} administration</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&display=swap">
 <style>${STYLE}${ADMIN_STYLE}</style></head><body><header class="bar"><div class="top"><a class="brand" href="/admin"><div><b>${esc(siteName(env))}</b><span>Administration</span></div></a>
-${section ? `<nav class="adm-nav">${nav("kilder", "/admin", "Kilder")}${nav("steder", "/admin/steder", "Steder")}<a href="/ostjylland">Se siden ↗</a><form method="post" action="/admin/logout"><button class="ghost">Log ud</button></form></nav>` : ""}</div></header>
+${section ? `<nav class="adm-nav">${nav("kilder", "/admin", "Kilder")}${nav("fund", "/admin/fund", "Fund")}${nav("scanner", "/admin/scanner", "Scanner")}${nav("steder", "/admin/steder", "Steder")}<a href="/ostjylland">Se siden ↗</a><form method="post" action="/admin/logout"><button class="ghost">Log ud</button></form></nav>` : ""}</div></header>
 ${body}</body></html>`;
 }
 
@@ -42,7 +42,7 @@ export const sourceValues = (s: Source): FormValues => ({ name: s.name, website:
 function sourceForm(action: string, v: FormValues, button: string): string {
   return `<form class="form" method="post" action="${action}"><input type="hidden" name="action" value="save">
 <div class="two"><label>Arrangørens navn<input name="name" required maxlength="120" value="${esc(v.name)}"></label><label>Hjemmeside<input name="website" maxlength="300" value="${esc(v.website)}" placeholder="arrangoer.dk"></label></div>
-<label>Kalenderadresse (iCal/.ics eller RSS)<input name="feed_url" required maxlength="500" value="${esc(v.feed_url)}" placeholder="https://… eller webcal://…"></label>
+<label>Kalenderadresse (iCal/.ics eller RSS; tom for en arrangør uden kalender)<input name="feed_url" maxlength="500" value="${esc(v.feed_url)}" placeholder="https://… eller webcal://…"></label>
 <div class="two"><label>Adresse, når et event ikke har sin egen<input name="default_address" maxlength="200" value="${esc(v.default_address)}" placeholder="Gade 1, 8000 Aarhus C"></label>
 <label>Arrangørens typiske tema<select name="default_topic" required>${TOPICS.map(t => `<option value="${t.slug}"${v.default_topic === t.slug ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select></label></div>
 <div class="two"><label>Kun events med et af ordene (valgfrit)<input name="include_words" maxlength="300" value="${esc(v.include_words)}" placeholder="fx yoga, meditation"></label>

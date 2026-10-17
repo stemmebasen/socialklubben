@@ -22,6 +22,8 @@ export type Source = {
   id: number; region: string; name: string; website: string | null; feed_url: string; default_address: string | null; default_topic: string;
   include_words: string | null; exclude_words: string | null; benefit: string | null; status: "active" | "paused"; contact_email: string | null; note: string | null;
   last_sync_at_ms: number | null; last_sync_ok: number | null; last_sync_message: string | null; created_at_ms: number; updated_at_ms: number;
+  /** "manual": no calendar; its events are finds the administration approved (src/scan.ts). */
+  kind: "feed" | "manual";
 };
 export type SourceInput = {
   name: string; website: string | null; feedUrl: string; defaultAddress: string | null; defaultTopic: string; includeWords: string | null; excludeWords: string | null;
@@ -38,8 +40,9 @@ export function sourceInput(form: FormData): { ok: true; value: SourceInput } | 
   const website = websiteText ? webUrl(/^https?:\/\//i.test(websiteText) ? websiteText : `https://${websiteText}`) : null;
   if (websiteText && !website) return { ok: false, error: "Hjemmesiden skal være en almindelig webadresse." };
   const feedText = field(form, "feed_url", 500).replace(/^webcals?:\/\//i, "https://");
-  const feedUrl = webUrl(feedText, true);
-  if (!feedUrl) return { ok: false, error: "Kalenderadressen skal begynde med https:// (eller webcal://)." };
+  // An organizer without a calendar gets its events one by one from approved finds.
+  const feedUrl = feedText ? webUrl(feedText, true) : "";
+  if (feedUrl === null) return { ok: false, error: "Kalenderadressen skal begynde med https:// (eller webcal://), eller stå tom for en arrangør uden kalender." };
   const defaultTopic = field(form, "default_topic", 40);
   if (!isTopic(defaultTopic)) return { ok: false, error: "Vælg det tema, arrangøren oftest har." };
   const contactEmail = field(form, "contact_email", 200).toLowerCase() || null;
@@ -50,16 +53,16 @@ export function sourceInput(form: FormData): { ok: true; value: SourceInput } | 
 }
 
 export async function createSource(db: D1Database, input: SourceInput, nowMs: number): Promise<number> {
-  const result = await db.prepare(`INSERT INTO sources (name, website, feed_url, default_address, default_topic, include_words, exclude_words, contact_email, note, created_at_ms, updated_at_ms)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(input.name, input.website, input.feedUrl, input.defaultAddress, input.defaultTopic, input.includeWords, input.excludeWords,
-      input.contactEmail, input.note, nowMs, nowMs).run();
+  const result = await db.prepare(`INSERT INTO sources (name, website, feed_url, kind, default_address, default_topic, include_words, exclude_words, contact_email, note, created_at_ms, updated_at_ms)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(input.name, input.website, input.feedUrl, input.feedUrl ? "feed" : "manual", input.defaultAddress, input.defaultTopic, input.includeWords,
+      input.excludeWords, input.contactEmail, input.note, nowMs, nowMs).run();
   return Number(result.meta?.last_row_id);
 }
 
 export async function updateSource(db: D1Database, id: number, input: SourceInput, nowMs: number): Promise<void> {
-  await db.prepare(`UPDATE sources SET name = ?, website = ?, feed_url = ?, default_address = ?, default_topic = ?, include_words = ?, exclude_words = ?, contact_email = ?,
-    note = ?, updated_at_ms = ? WHERE id = ?`).bind(input.name, input.website, input.feedUrl, input.defaultAddress, input.defaultTopic, input.includeWords, input.excludeWords,
-      input.contactEmail, input.note, nowMs, id).run();
+  await db.prepare(`UPDATE sources SET name = ?, website = ?, feed_url = ?, kind = ?, default_address = ?, default_topic = ?, include_words = ?, exclude_words = ?, contact_email = ?,
+    note = ?, updated_at_ms = ? WHERE id = ?`).bind(input.name, input.website, input.feedUrl, input.feedUrl ? "feed" : "manual", input.defaultAddress, input.defaultTopic, input.includeWords,
+      input.excludeWords, input.contactEmail, input.note, nowMs, id).run();
 }
 
 export async function setSourceStatus(db: D1Database, id: number, status: Source["status"], nowMs: number): Promise<void> {
@@ -76,7 +79,7 @@ export async function setEventHidden(db: D1Database, sourceId: number, eventId: 
 // ---- Reading a calendar ----
 
 /** The body as text, or null once it passes maxBytes - a huge calendar is never read whole into memory. */
-async function readLimited(response: Response, maxBytes: number): Promise<string | null> {
+export async function readLimited(response: Response, maxBytes: number): Promise<string | null> {
   if (Number(response.headers.get("content-length") ?? 0) > maxBytes) return null;
   if (!response.body) return "";
   const reader = response.body.getReader();
@@ -105,6 +108,7 @@ export type SyncResult = { ok: boolean; message: string; coming: number; written
  * the events already shown as they are, and says why in the administration. */
 export async function syncSource(db: D1Database, deps: Pick<Deps, "fetcher" | "now">, source: Source): Promise<SyncResult> {
   const now = deps.now();
+  if (source.kind === "manual") return { ok: true, message: "Arrangør uden kalender: events kommer fra godkendte fund.", coming: 0, written: 0 };
   const finish = async (result: SyncResult) => {
     await db.prepare("UPDATE sources SET last_sync_at_ms = ?, last_sync_ok = ?, last_sync_message = ? WHERE id = ?")
       .bind(now, result.ok ? 1 : 0, result.message.slice(0, 300), source.id).run();
@@ -183,7 +187,7 @@ export async function runSourceSync(env: Env, deps: Deps): Promise<void> {
   if (!db) return;
   const now = deps.now();
   if (!(await claimJob(db, "sources", Math.floor(now / HOUR), now))) return;
-  const sources = (await db.prepare("SELECT * FROM sources WHERE status = 'active' ORDER BY id LIMIT ?").bind(MAX_SOURCES_PER_RUN).all<Source>()).results ?? [];
+  const sources = (await db.prepare("SELECT * FROM sources WHERE status = 'active' AND kind = 'feed' ORDER BY id LIMIT ?").bind(MAX_SOURCES_PER_RUN).all<Source>()).results ?? [];
   for (const source of sources) {
     await syncSource(db, deps, source).catch(error => console.warn("source_sync_failed", source.id, error instanceof Error ? error.message : error));
   }

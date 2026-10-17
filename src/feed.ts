@@ -33,7 +33,7 @@ const NAMED: Record<string, string> = { nbsp: " ", amp: "&", lt: "<", gt: ">", q
   aacute: "á", eacute: "é", iacute: "í", oacute: "ó", uacute: "ú", agrave: "à", egrave: "è", auml: "ä", euml: "ë", ouml: "ö", uuml: "ü", Ouml: "Ö", Uuml: "Ü", Auml: "Ä",
   ntilde: "ñ", ccedil: "ç", szlig: "ß", ndash: "–", mdash: "—", hellip: "…", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“" };
 
-function plain(text: string): string {
+export function plain(text: string): string {
   return text
     .replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<[^>]+>/g, " ")
     .replace(/&([a-zA-Z]+);/g, (whole, name: string) => NAMED[name] ?? whole)

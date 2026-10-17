@@ -35,3 +35,22 @@ export function notFoundPage(env: Env, origin: string): string {
   return page(env, origin, { title: `Siden findes ikke · ${siteName(env)}`, path: "/", noindex: true, description: "Siden findes ikke.",
     body: `<main><h1>Siden findes ikke</h1><p class="lead">Måske er arrangementet taget af kalenderen.</p><p><a class="button" href="/ostjylland">Se hvad der sker i Østjylland</a></p></main>` });
 }
+
+/** "Tip et event": anyone can tell the portal about an event. It is only shown once the administration has approved it. */
+export function tipPage(env: Env, origin: string, state: { done: boolean; error: string; values: Record<string, string> }): string {
+  const v = (k: string) => esc(state.values[k] ?? "");
+  const body = state.done
+    ? `<div class="card"><h2>Tak for tippet</h2><p>Vi kigger på det, før det kommer på siden. Det plejer at tage et par dage.</p><p><a class="button ghost" href="/tip">Tip et event mere</a></p></div>`
+    : `<div class="card"><form class="tip" method="post" action="/tip">${state.error ? `<p class="notice warn" role="alert">${esc(state.error)}</p>` : ""}
+<label>Titel<input name="title" required maxlength="200" value="${v("title")}"></label>
+<div class="tip-row"><label>Dato<input type="date" name="date" required value="${v("date")}"></label><label>Fra kl.<input name="time" inputmode="numeric" placeholder="19.00" maxlength="5" value="${v("time")}"></label><label>Til kl.<input name="end" inputmode="numeric" placeholder="21.00" maxlength="5" value="${v("end")}"></label></div>
+<label>Sted (adresse, eller "Online")<input name="place" required maxlength="200" value="${v("place")}"></label>
+<div class="tip-row"><label>Arrangør<input name="organizer" maxlength="120" value="${v("organizer")}"></label><label>Link til eventet<input name="link" inputmode="url" maxlength="300" value="${v("link")}" placeholder="https://"></label></div>
+<label>Kort beskrivelse<textarea name="description" maxlength="3000">${v("description")}</textarea></label>
+<label>Din e-mail (valgfri, kun hvis vi har spørgsmål; vises aldrig)<input type="email" name="contact" maxlength="200" value="${v("contact")}"></label>
+<label class="hp" aria-hidden="true">Lad feltet stå tomt<input name="hjemmeside" tabindex="-1" autocomplete="off"></label>
+<p style="margin:0"><button>Send tippet</button></p></form></div>`;
+  return page(env, origin, { title: `Tip et event · ${siteName(env)}`, path: "/tip", description: "Kender du et event, der hører til her? Tip os.",
+    head: `<style>.tip{display:grid;gap:12px}.tip-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.hp{position:absolute;left:-9999px}</style>`,
+    body: `<main style="max-width:760px"><div><h1>Tip et event</h1><p class="lead">Kender du et event, der hører til her? Fortæl os om det. Vi tjekker alle tips, før de kommer på siden.</p></div>${body}</main>` });
+}

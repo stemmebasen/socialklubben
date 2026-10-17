@@ -75,7 +75,7 @@ export function page(env: Env, origin: string, o: PageOptions): string {
 <nav class="main" aria-label="Menu">${TABS.map(([key, path, label]) => nav(key, `/${esc(region)}${path}`, label, "tab")).join("")}${nav("arrangorer", `/${esc(region)}/arrangorer`, "Arrangører")}${nav("om", "/om", "Om")}</nav></div></header>
 ${o.body}
 ${o.noFooter ? "" : `<footer class="site"><span>${esc(name)} er en uafhængig oversigt. Alt kommer fra arrangørernes egne kalendere, og tilmelding sker altid hos arrangøren.</span>
-<a href="/om#med">Få jeres events med →</a></footer>`}
+<span><a href="/tip">Tip et event</a> · <a href="/om#med">Få jeres events med →</a></span></footer>`}
 <nav class="tabs" aria-label="Visninger">${TABS.map(([key, path, label]) => `<a href="/${esc(region)}${path}"${o.section === key ? ' class="on" aria-current="page"' : ""}>${icon(key, 24)}<span>${label}</span></a>`).join("")}</nav>
 <script src="/app.js" defer></script>${(o.scripts ?? []).map(src => `<script src="${esc(src)}" defer></script>`).join("")}</body></html>`;
 }

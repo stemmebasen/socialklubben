@@ -124,7 +124,7 @@ ${SHOWN_TOPICS.map(t => `.pin[data-t="${t.slug}"]{--t-dk:var(--td-${t.slug})}`).
 @media (max-width:720px){
 .deck{left:0;right:0;bottom:calc(68px + env(safe-area-inset-bottom));padding:0 16px 10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px}
 .sheet{flex:none;width:calc(100vw - 52px);scroll-snap-align:start}.ev-card,.empty-card{flex:none;width:236px;scroll-snap-align:start}
-.leaflet-control-zoom{display:none}}`;
+.leaflet-top.leaflet-right{top:128px}.leaflet-right .leaflet-control-zoom{margin-right:16px;border:0;box-shadow:var(--shadow)}}`;
 
 /** The compact form the map script gets: only what it draws. */
 function compact(region: Region, e: ShownEvent, days: Day[]) {

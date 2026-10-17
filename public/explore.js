@@ -16,7 +16,8 @@
   const svg = (name, size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${data.icons[name] || ""}</svg>`;
 
   const map = L.map("map", { zoomControl: false, zoomSnap: 0.5 }).setView([data.region.lat, data.region.lng], 9);
-  if (!phone()) L.control.zoom({ position: "bottomright" }).addTo(map);
+  // On a phone the sheet covers the bottom, so the zoom buttons sit at the top, under the locate button.
+  L.control.zoom({ position: phone() ? "topright" : "bottomright" }).addTo(map);
   L.tileLayer(data.tiles, { attribution: data.attribution, maxZoom: 18 }).addTo(map);
   const pins = L.layerGroup().addTo(map);
 
@@ -99,6 +100,11 @@
     el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
   }
 
+  // Events at the same address are opened out in a ring, so each can be tapped.
+  let opened = null;
+  const pin = (topic, n, on) => L.divIcon({ className: "", iconSize: [44, 44], iconAnchor: [22, 53],
+    html: `<div class="pin${on ? " on" : ""}" data-t="${topic}">${svg(topic, 22)}${n > 1 ? `<b>${n}</b>` : ""}</div>` });
+
   function drawPins(list) {
     pins.clearLayers();
     // Close pins are gathered: greedy, within 46 px on screen.
@@ -110,21 +116,34 @@
       else groups.push({ p, events: [e] });
     }
     for (const g of groups) {
+      const n = g.events.length;
+      const first = g.events[0];
+      const key = g.events.map(e => e.id).join(",");
+      if (n > 1 && opened === key) {
+        const radius = 34 + 7 * n;
+        g.events.forEach((e, i) => {
+          const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
+          const at = map.layerPointToLatLng(g.p.add([Math.cos(angle) * radius, Math.sin(angle) * radius]));
+          L.polyline([[first.la, first.ln], at], { color: "#1d2733", weight: 1.5, opacity: 0.5, interactive: false }).addTo(pins);
+          L.marker(at, { icon: pin(e.k, 1, false), title: e.t, riseOnHover: true }).addTo(pins).on("click", () => showCard(e.id));
+        });
+        continue;
+      }
       const count = {};
       for (const e of g.events) count[e.k] = (count[e.k] || 0) + 1;
       const topic = Object.keys(count).sort((a, b) => count[b] - count[a])[0];
-      const n = g.events.length;
-      const icon = L.divIcon({ className: "", iconSize: [44, 44], iconAnchor: [22, 53],
-        html: `<div class="pin" data-t="${topic}">${svg(topic, 22)}${n > 1 ? `<b>${n}</b>` : ""}</div>` });
-      const first = g.events[0];
-      const marker = L.marker([first.la, first.ln], { icon, title: n > 1 ? `${n} events` : first.t, riseOnHover: true }).addTo(pins);
+      const marker = L.marker([first.la, first.ln], { icon: pin(topic, n, false), title: n > 1 ? `${n} events` : first.t, riseOnHover: true }).addTo(pins);
       marker.on("click", () => {
+        if (n === 1) return showCard(first.id);
         const spread = L.latLngBounds(g.events.map(e => [e.la, e.ln]));
-        if (n > 1 && map.getZoom() < 16 && spread.getNorthEast().distanceTo(spread.getSouthWest()) > 30) map.flyToBounds(spread, { ...padding(), maxZoom: 16, duration: 0.6 });
-        else showCard(first.id);
+        // Apart on the map: zoom in until they separate. At the same place: open them out.
+        if (map.getZoom() < 17 && spread.getNorthEast().distanceTo(spread.getSouthWest()) > 25) map.flyToBounds(spread, { ...padding(), maxZoom: 17, duration: 0.6 });
+        else { opened = key; render(); showCard(first.id); }
       });
     }
   }
+  map.on("zoomstart", () => { opened = null; });
+  map.on("click", () => { if (opened) { opened = null; render(); } });
 
   function render() {
     const shown = data.events.filter(matches);

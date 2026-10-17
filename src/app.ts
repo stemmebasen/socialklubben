@@ -9,7 +9,8 @@ import { handleAdmin, isAdminPath } from "./admin/handler.js";
 import { eventPage } from "./pages/event.js";
 import { html } from "./pages/layout.js";
 import { eventPath, planPage } from "./pages/region.js";
-import { aboutPage, notFoundPage, organizersPage } from "./pages/static.js";
+import { aboutPage, notFoundPage, organizersPage, tipPage } from "./pages/static.js";
+import { takeTip } from "./scan.js";
 
 /** The portal's routes. Static files (map script, Leaflet) are served by Workers Static Assets before
  * this is reached. */
@@ -40,6 +41,13 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
   const origin = url.origin;
   const now = deps.now();
   if (isAdminPath(url.pathname)) return handleAdmin(request, env, deps);
+  if (url.pathname === "/tip" && request.method === "POST") {
+    if (!env.DB) return new Response("Databasen er ikke forbundet.", { status: 503 });
+    if (request.headers.get("origin") !== url.origin) return new Response("Formularen kom fra et andet sted.", { status: 403 });
+    const result = await takeTip(env.DB, (await request.formData().catch(() => null)) ?? new FormData(), request, now);
+    return result.ok ? new Response(null, { status: 303, headers: { location: "/tip?tak=1" } })
+      : html(tipPage(env, origin, { done: false, error: result.error, values: result.values }), 400, { "cache-control": "no-store" });
+  }
   if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405, headers: { allow: "GET, HEAD" } });
   const db = env.DB;
   const missing = () => html(notFoundPage(env, origin), 404, { "cache-control": "no-store" });
@@ -47,6 +55,7 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
   if (url.pathname === "/") return new Response(null, { status: 302, headers: { location: `/${REGIONS[0]!.slug}` } });
   if (url.pathname === "/robots.txt") return new Response(`User-agent: *\nDisallow: /admin\nDisallow: /ud/\nDisallow: /*/gemt\nDisallow: /*/sog?\nSitemap: ${origin}/sitemap.xml\n`, { headers: { "content-type": "text/plain; charset=utf-8" } });
   if (url.pathname === "/om") return html(aboutPage(env, origin, env.CONTACT_EMAIL?.trim() || null));
+  if (url.pathname === "/tip") return html(tipPage(env, origin, { done: url.searchParams.has("tak"), error: "", values: {} }));
   if (url.pathname === "/health") {
     const ready = db ? await db.prepare("SELECT COUNT(*) AS n FROM sources").first<{ n: number }>().then(() => true, () => false) : false;
     return Response.json({ status: ready ? "ok" : "degraded", database: ready ? "ready" : "unavailable" }, { status: ready ? 200 : 503, headers: { "cache-control": "no-store" } });
