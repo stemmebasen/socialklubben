@@ -3,7 +3,7 @@ import { copenhagenDay, copenhagenMidnight, type ShownEvent } from "../events.js
 import type { Region } from "../geo.js";
 import { SHOWN_TOPICS, isTopic, topicLabel } from "../topics.js";
 import { clock, esc, page, scriptJson } from "./layout.js";
-import { eventPath, placeText } from "./region.js";
+import { eventPath, placeAddress, placeName } from "./region.js";
 import { COLORS, icon, iconPaths, priceText } from "./ui.js";
 
 /** Udforsk: the region on a map, with a sheet over it - the next 14 days as bars, the chosen day's events
@@ -108,8 +108,20 @@ ${Object.entries(COLORS).map(([t, [, dark]]) => `.pin[data-t="${t}"]{--t:${dark}
 .ev-card h2{margin:0;font-size:17px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ev-card h2 a{color:inherit;text-decoration:none}.ev-card h2 a::after{content:"";position:absolute;inset:0}
 .ev-card p{margin:0;color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ev-card .when{color:var(--t);font-weight:650}
+.ev-card .when{color:var(--t);font-weight:650}.ev-card .name{color:var(--ink);font-weight:650;font-size:15px}
+.pin-wrap{position:relative;width:44px;height:44px}.pin-name{display:none;position:absolute;top:52px;left:50%;transform:translateX(-50%);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+font:650 12.5px/1.2 var(--font);color:var(--ink);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg),0 0 6px var(--bg);pointer-events:none}.named .pin-name{display:block}
 .ev-card.on{outline:2px solid var(--accent);outline-offset:-2px}
+.ev-pop{position:fixed;inset:0;z-index:1300;display:grid;place-items:center;padding:16px;background:rgba(8,12,18,.45);backdrop-filter:blur(2px)}
+.ev-pop-card{position:relative;width:min(520px,100%);max-height:min(86dvh,760px);overflow:auto;background:var(--card);color:var(--ink);border-radius:26px;box-shadow:0 30px 80px -20px rgba(0,0,0,.5);border:1px solid var(--line)}
+.ev-pop-top{display:flex;align-items:center;gap:10px;padding:16px 56px 14px 20px;background:color-mix(in srgb,var(--t) 16%,var(--card));color:var(--t);font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.ev-pop-body{display:grid;gap:12px;padding:16px 20px 22px}.ev-pop h2{margin:0;font-size:24px;line-height:1.15;letter-spacing:-.02em}
+.ev-pop .facts{display:grid;gap:6px;margin:0;font-size:15.5px}.ev-pop .facts b{font-weight:650}.ev-pop .facts span{color:var(--muted)}
+.ev-pop .text{margin:0;color:var(--ink);font-size:15px;white-space:pre-line}.ev-pop .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ev-pop .close{position:absolute;top:10px;right:10px;width:38px;height:38px;min-height:0;padding:0;border-radius:50%;background:var(--card);color:var(--ink);font-size:22px;line-height:1}
+.ev-pop .save{position:static;width:auto;height:auto;min-height:44px;padding:10px 18px;border-radius:999px;gap:6px;background:transparent;border:1.5px solid var(--line);backdrop-filter:none}
+.ev-pop .more-link{font-size:14px}
+@media (max-width:720px){.ev-pop{place-items:end stretch;padding:0}.ev-pop-card{width:100%;max-height:88dvh;border-radius:26px 26px 0 0;padding-bottom:env(safe-area-inset-bottom)}}
 .save{position:absolute;z-index:2;top:10px;right:10px;width:38px;height:38px;min-height:0;padding:0;border-radius:50%;background:color-mix(in srgb,var(--card) 82%,transparent);color:var(--ink);backdrop-filter:blur(8px)}
 .save[aria-pressed="true"]{color:var(--accent)}.save[aria-pressed="true"] svg{fill:currentColor}
 .empty-card{display:grid;place-items:center;padding:20px;text-align:center;color:var(--muted)}
@@ -126,7 +138,8 @@ ${Object.entries(COLORS).map(([t, [, dark]]) => `.pin[data-t="${t}"]{--t:${dark}
 
 /** The compact form the map script gets: only what it draws. */
 function compact(region: Region, e: ShownEvent, days: Day[]) {
-  return { id: e.id, t: e.title, k: e.topic, h: e.all_day ? "Hele dagen" : clock(e.starts_at_ms), w: placeText(e) ?? e.source_name, n: e.source_name,
+  return { id: e.id, t: e.title, k: e.topic, h: e.all_day ? "Hele dagen" : clock(e.starts_at_ms), w: placeAddress(e), n: placeName(e), s: e.source_name, e: e.all_day || !e.ends_at_ms ? null : clock(e.ends_at_ms),
+    x: e.description ? e.description.slice(0, 900) : null, r: `/ud/${e.id}`,
     la: e.lat, ln: e.lng, o: e.online, p: e.price_minor, v: lengthOf(e), d: daysOf(e, days), u: eventPath(region.slug, e), i: e.image_url };
 }
 
@@ -136,7 +149,7 @@ function card(e: Compact, day: Day): string {
   const price = priceText(e.p);
   return `<article class="ev-card" data-t="${esc(e.k)}" data-id="${e.id}"><div class="cover${e.i ? " img" : ""}"${e.i ? ` style="background-image:url('${esc(e.i.replace(/'/g, "%27"))}')"` : ""}>${icon(e.k, 40)}</div>
 <span class="badge">${esc(topicLabel(e.k))}</span><button type="button" class="save" data-save="${e.id}" aria-pressed="false" aria-label="Gem" hidden>${icon("gemt", 18)}</button>
-<div class="body"><h2><a href="${esc(e.u)}">${esc(e.t)}</a></h2><p><span class="when">${esc(day.label)} ${esc(e.h)}</span></p><p>${esc(e.w)}${price ? ` · ${esc(price)}` : ""}</p></div></article>`;
+<div class="body"><h2><a href="${esc(e.u)}">${esc(e.t)}</a></h2><p><span class="when">${esc(day.label)} ${esc(e.h)}</span></p><p class="name">${esc(e.n)}</p>${e.w || price ? `<p>${esc([e.w, price].filter(Boolean).join(" · "))}</p>` : ""}</div></article>`;
 }
 
 export function explorePage(env: Env, origin: string, region: Region, events: ShownEvent[], q: ExploreQuery, nowMs: number): string {
@@ -163,7 +176,7 @@ export function explorePage(env: Env, origin: string, region: Region, events: Sh
   const chips = `<a class="all${q.topic ? "" : " on"}" href="${esc(href({ tema: null }))}" data-tema="">Alle kategorier</a>${SHOWN_TOPICS.map(t => `<a data-t="${t.slug}" data-tema="${t.slug}" href="${esc(href({ tema: t.slug }))}"${q.topic === t.slug ? ' class="on"' : ""}>${esc(t.label)}</a>`).join("")}`;
   const cards = today.length ? today.map(e => card(e, day)).join("") : `<div class="empty-card"><p>Ingen events ${esc(day.label.toLocaleLowerCase("da-DK"))} med de valg.</p></div>`;
 
-  const data = { region: { name: region.name, lat: region.lat, lng: region.lng }, towns: region.towns.map(t => ({ n: t.name, la: t.lat, ln: t.lng })),
+  const data = { region: { name: region.name, lat: region.lat, lng: region.lng }, start: [[region.start.south, region.start.west], [region.start.north, region.start.east]], towns: region.towns.map(t => ({ n: t.name, la: t.lat, ln: t.lng })),
     days: days.map(d => ({ key: d.key, letter: d.letter, date: d.date, label: d.label })), events: all, chosen,
     tiles: env.MAP_TILES || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: env.MAP_ATTRIBUTION || "© OpenStreetMap",
     labels: Object.fromEntries(SHOWN_TOPICS.map(t => [t.slug, t.label])), icons: iconPaths([...SHOWN_TOPICS.map(t => t.slug), "gemt"]) };

@@ -3,7 +3,7 @@ import { firstOfSeries, type ShownEvent } from "../events.js";
 import type { Region } from "../geo.js";
 import { SHOWN_TOPICS } from "../topics.js";
 import { esc, page } from "./layout.js";
-import { eventPath, heading, placeText } from "./region.js";
+import { eventPath, heading } from "./region.js";
 import { eventRow, icon, ROW_STYLE } from "./ui.js";
 
 /** Søg and Gemt. A search looks through every coming event's title, text, organizer and place. What a
@@ -23,7 +23,7 @@ function grouped(region: Region, events: ShownEvent[], nowMs: number): string {
     const key = heading(Math.max(e.starts_at_ms, nowMs), nowMs);
     days.set(key, [...(days.get(key) ?? []), e]);
   }
-  return [...days.entries()].map(([day, list]) => `<h2 class="day-head">${esc(day)}</h2><ul class="rows">${list.map(e => eventRow(e, eventPath(region.slug, e), placeText(e))).join("")}</ul>`).join("");
+  return [...days.entries()].map(([day, list]) => `<h2 class="day-head">${esc(day)}</h2><ul class="rows">${list.map(e => eventRow(e, eventPath(region.slug, e))).join("")}</ul>`).join("");
 }
 
 export function searchPage(env: Env, origin: string, region: Region, query: string, events: ShownEvent[] | null, nowMs: number): string {

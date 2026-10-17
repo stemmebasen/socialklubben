@@ -3,6 +3,7 @@ import { formatKm } from "../geo.js";
 import { formatKrMinor } from "../price.js";
 import { topicLabel } from "../topics.js";
 import { clock, esc } from "./layout.js";
+import { placeAddress, placeName } from "./region.js";
 
 /** The small shared pieces of the public views: a glyph and a colour per theme (so a pin, a card and a
  * row can be told apart at a glance), the plain icons, and the event row Planlæg, Søg and Gemt share.
@@ -59,10 +60,11 @@ export const shortWhen = (e: Pick<ShownEvent, "starts_at_ms" | "all_day">) =>
 
 export const priceText = (minor: number | null) => minor === null ? null : minor === 0 ? "Gratis" : formatKrMinor(minor);
 
-/** One row of a list: the theme's tile, "TEMA · TORS. 19.00" with any more dates of the series, the title,
- * and where - with the distance when a centre is chosen. */
-export function eventRow(e: ShownEvent & { more?: number }, href: string, place: string | null): string {
-  const where = [place ?? e.source_name, e.distance !== null ? formatKm(e.distance) : null].filter(Boolean).map(esc).join(" · ");
+/** One row of a list: the category's tile, "TORS. 19.00 · KATEGORI" with any more dates of the series, the
+ * title, and where - the place's or organizer's name first, then the address and the distance when a centre is chosen. */
+export function eventRow(e: ShownEvent & { more?: number }, href: string): string {
+  const address = placeAddress(e);
+  const where = `<b>${esc(placeName(e))}</b>${[address, e.distance !== null ? formatKm(e.distance) : null].filter(Boolean).map(t => ` · ${esc(t)}`).join("")}`;
   const price = priceText(e.price_minor);
   return `<li><a class="row" href="${esc(href)}" data-t="${esc(e.topic)}"><span class="tile">${icon(e.topic, 24)}</span><span class="row-main">
 <span class="kicker"><span>${esc(shortWhen(e))} · ${esc(topicLabel(e.topic))}</span>${e.more ? `<span class="more">+${e.more} ${e.more === 1 ? "dato" : "datoer"}</span>` : ""}</span>
@@ -80,5 +82,5 @@ export const ROW_STYLE = `
 .kicker>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .more{flex:none;padding:1px 8px;border-radius:7px;background:color-mix(in srgb,var(--t) 14%,transparent);letter-spacing:.02em;text-transform:none}
 .row-title{font-size:17px;font-weight:650;line-height:1.3;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row-where{font-size:14.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-where b{color:var(--ink);font-weight:600}.row-where{font-size:14.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .day-head{margin:22px 4px 8px;font-size:13px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.day-head:first-child{margin-top:0}`;

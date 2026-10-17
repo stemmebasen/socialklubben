@@ -42,6 +42,20 @@ export function placeText(e: Pick<ShownEvent, "online" | "location" | "venue_add
   return address ?? location;
 }
 
+/** The name people know the place by: the venue the calendar names ("Studie Ro, Mejlgade 30" → "Studie Ro"),
+ * else the organizer. It is what a card, a row and a pin lead with. */
+export function placeName(e: Pick<ShownEvent, "online" | "location" | "source_name">): string {
+  const first = e.online ? "" : (e.location ?? "").split(",")[0]!.trim();
+  return first && !/\d/.test(first) && !/^online$/i.test(first) ? first : e.source_name;
+}
+
+/** Where, without the name in front: the address, or "Online". */
+export function placeAddress(e: Pick<ShownEvent, "online" | "location" | "venue_address" | "source_name">): string | null {
+  const text = placeText(e), name = placeName(e);
+  if (!text || text === name) return null;
+  return text.startsWith(`${name}, `) ? text.slice(name.length + 2) : text;
+}
+
 export function planPage(env: Env, origin: string, v: RegionView): string {
   const r = v.region, f = v.filter;
   const params = (change: Record<string, string | null>) => {
@@ -74,7 +88,7 @@ export function planPage(env: Env, origin: string, v: RegionView): string {
     days.set(key, [...(days.get(key) ?? []), e]);
   }
   const list = v.events.length ? `<div class="plan">${[...days.values()].map(list => `<h2 class="day-head">${esc(heading(Math.max(list[0]!.starts_at_ms, v.nowMs), v.nowMs))}</h2>
-<ul class="rows">${list.map(e => eventRow(e, eventPath(r.slug, e), placeText(e))).join("")}</ul>`).join("")}</div>`
+<ul class="rows">${list.map(e => eventRow(e, eventPath(r.slug, e))).join("")}</ul>`).join("")}</div>`
     : `<div class="card"><h2>Ingen events med de valg</h2><p class="muted">Prøv en større radius, en længere periode eller alle kategorier.</p><p><a class="button ghost" href="/${esc(r.slug)}/planlaeg">Nulstil filtre</a></p></div>`;
 
   const title = `Det sker ${where} · ${siteName(env)}`;

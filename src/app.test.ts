@@ -75,7 +75,9 @@ describe("the portal", () => {
     expect(order.every((at, i) => at > 0 && (i === 0 || at > order[i - 1]!))).toBe(true);
     // Outside the region: an event in Copenhagen belongs to another region's page.
     expect(text).not.toContain("Meditation i København");
-    expect(text).toContain("Guldsmedgade 26B, 8000 Aarhus C · 150 kr.");
+    // The place's or organizer's name leads, then the address.
+    expect(text).toContain("<b>Hjerterum</b> · Guldsmedgade 26B, 8000 Aarhus C · 150 kr.");
+    expect(text).toContain("<b>Yogahuset</b> · Søndergade 5, 8600 Silkeborg");
     expect(text).toContain("lør. 19.00 · Krop &amp; sind");
     // Text from a calendar is never markup.
     expect(text).not.toContain("gongs <3");
@@ -173,7 +175,9 @@ describe("the portal", () => {
     expect(text).toContain('aria-label="I morgen: 1 events"');
     const data = JSON.parse(/<script type="application\/json" id="explore-data">([\s\S]*?)<\/script>/.exec(text)![1]!);
     expect(data.events.map((e: { t: string }) => e.t)).toEqual(["Yin yoga workshop", "Kakaoceremoni", "Mindfulness online", "Lydbad med gongs <3 & \"ro\""]);
-    expect(data.events[0]).toMatchObject({ k: "krop-sind", h: "19.00", v: "kort", p: 25000, d: [1] });
+    expect(data.events[0]).toMatchObject({ k: "krop-sind", h: "19.00", v: "kort", p: 25000, d: [1], n: "Yogahuset", s: "Yogahuset", w: "Søndergade 5, 8600 Silkeborg", e: "21.00", x: "Lange stræk og ro.\nPris: 250 kr." });
+    // It opens on Aarhus.
+    expect(data.start).toEqual([[56.125, 10.145], [56.19, 10.255]]);
     // Lydbad has no end in its calendar, so its length is not guessed.
     expect(data.events[3].v).toBeNull();
     // A day, a theme and "free" are in the address and work without the map script.
