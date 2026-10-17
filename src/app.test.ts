@@ -46,9 +46,9 @@ async function setup() {
 async function withTwoOrganizers() {
   const s = await setup();
   const cookie = await s.login();
-  await s.call("/admin/kilder", { method: "POST", cookie, body: form({ name: "Hjerterum", website: "holistisk.org", feed_url: HJERTERUM_RSS, default_topic: "cirkler",
+  await s.call("/admin/kilder", { method: "POST", cookie, body: form({ name: "Hjerterum", website: "holistisk.org", feed_url: HJERTERUM_RSS, default_topic: "faellesskab",
     default_address: "Guldsmedgade 26B, 8000 Aarhus C" }) });
-  await s.call("/admin/kilder", { method: "POST", cookie, body: form({ name: "Yogahuset", website: "yogahuset.example", feed_url: YOGA_ICS, default_topic: "krop" }) });
+  await s.call("/admin/kilder", { method: "POST", cookie, body: form({ name: "Yogahuset", website: "yogahuset.example", feed_url: YOGA_ICS, default_topic: "krop-sind" }) });
   await geocodePending(s.env, s.deps);
   return { ...s, cookie };
 }
@@ -76,7 +76,7 @@ describe("the portal", () => {
     // Outside the region: an event in Copenhagen belongs to another region's page.
     expect(text).not.toContain("Meditation i København");
     expect(text).toContain("Guldsmedgade 26B, 8000 Aarhus C · 150 kr.");
-    expect(text).toContain("lør. 19.00 · Spiritualitet");
+    expect(text).toContain("lør. 19.00 · Krop &amp; sind");
     // Text from a calendar is never markup.
     expect(text).not.toContain("gongs <3");
     expect(text).toContain("Lydbad med gongs &lt;3 &amp; &quot;ro&quot;");
@@ -85,7 +85,8 @@ describe("the portal", () => {
   it("filters by theme, time and distance from a town or the visitor", async () => {
     const { call } = await withTwoOrganizers();
     const titles = async (path: string) => [...(await (await call(path)).text()).matchAll(/class="row-title">([^<]+)</g)].map(m => m[1]);
-    expect(await titles("/ostjylland/planlaeg?nar=alle&tema=krop")).toEqual(["Yin yoga workshop"]);
+    expect(await titles("/ostjylland/planlaeg?nar=alle&tema=krop-sind")).toHaveLength(4);
+    expect(await titles("/ostjylland/planlaeg?nar=alle&tema=musik")).toEqual([]);
     expect(await titles("/ostjylland/planlaeg?nar=alle&by=aarhus&km=10")).toEqual(["Kakaoceremoni", "Lydbad med gongs &lt;3 &amp; &quot;ro&quot;"]);
     expect(await titles("/ostjylland/planlaeg?nar=alle&by=silkeborg&km=5")).toEqual(["Yin yoga workshop"]);
     expect(await titles("/ostjylland/planlaeg?nar=alle&by=silkeborg&km=50")).toHaveLength(3);
@@ -148,7 +149,7 @@ describe("the portal", () => {
     const set = await call(`/admin/steder/${venue!.id}`, { method: "POST", cookie, body: form({ action: "set", coords: "56,17; 9,55" }) });
     expect(set.headers.get("location")).toBe("/admin/steder?besked=sat");
     expect(await db.prepare("SELECT lat, lng, status FROM venues WHERE id = ?").bind(venue!.id).first()).toEqual({ lat: 56.17, lng: 9.55, status: "manual" });
-    const bad = await call(`/admin/kilder`, { method: "POST", cookie, body: form({ name: "X", feed_url: "ftp://x", default_topic: "krop" }) });
+    const bad = await call(`/admin/kilder`, { method: "POST", cookie, body: form({ name: "X", feed_url: "ftp://x", default_topic: "krop-sind" }) });
     expect(bad.status).toBe(400);
   });
 
@@ -172,7 +173,7 @@ describe("the portal", () => {
     expect(text).toContain('aria-label="I morgen: 1 events"');
     const data = JSON.parse(/<script type="application\/json" id="explore-data">([\s\S]*?)<\/script>/.exec(text)![1]!);
     expect(data.events.map((e: { t: string }) => e.t)).toEqual(["Yin yoga workshop", "Kakaoceremoni", "Mindfulness online", "Lydbad med gongs <3 & \"ro\""]);
-    expect(data.events[0]).toMatchObject({ k: "krop", h: "19.00", v: "kort", p: 25000, d: [1] });
+    expect(data.events[0]).toMatchObject({ k: "krop-sind", h: "19.00", v: "kort", p: 25000, d: [1] });
     // Lydbad has no end in its calendar, so its length is not guessed.
     expect(data.events[3].v).toBeNull();
     // A day, a theme and "free" are in the address and work without the map script.
@@ -181,9 +182,9 @@ describe("the portal", () => {
     expect(saturday).toContain(">Kakaoceremoni</a>");
     expect(saturday).not.toContain(">Yin yoga workshop</a>");
     expect(await (await call("/ostjylland?dag=2026-10-03&slags=online")).text()).toContain("Ingen events lør. 3. med de valg");
-    expect(await (await call("/ostjylland?dag=2026-10-02&tema=krop&varighed=kort")).text()).toContain(">Yin yoga workshop</a>");
+    expect(await (await call("/ostjylland?dag=2026-10-02&tema=krop-sind&varighed=kort")).text()).toContain(">Yin yoga workshop</a>");
     // Links to the list from before Udforsk go on to Planlæg.
-    expect((await call("/ostjylland?nar=alle&tema=krop")).headers.get("location")).toBe("/ostjylland/planlaeg?nar=alle&tema=krop");
+    expect((await call("/ostjylland?nar=alle&tema=krop-sind")).headers.get("location")).toBe("/ostjylland/planlaeg?nar=alle&tema=krop-sind");
   });
 
   it("shows a series once in Planlæg with its other dates, and lists them on the event's page", async () => {
@@ -191,7 +192,7 @@ describe("the portal", () => {
     const yin = await db.prepare("SELECT * FROM events WHERE source_uid = 'yin'").first<Record<string, unknown>>();
     const week = 7 * 86_400_000;
     await db.prepare(`INSERT INTO events (source_id, source_uid, title, starts_at_ms, ends_at_ms, venue_id, topic, content_hash, first_seen_at_ms, updated_at_ms)
-      VALUES (?, 'yin-2', 'Yin yoga workshop', ?, ?, ?, 'krop', 'x', 0, 0)`).bind(yin!.source_id, Number(yin!.starts_at_ms) + week, Number(yin!.ends_at_ms) + week, yin!.venue_id).run();
+      VALUES (?, 'yin-2', 'Yin yoga workshop', ?, ?, ?, 'krop-sind', 'x', 0, 0)`).bind(yin!.source_id, Number(yin!.starts_at_ms) + week, Number(yin!.ends_at_ms) + week, yin!.venue_id).run();
     const plan = await (await call("/ostjylland/planlaeg?nar=alle")).text();
     expect(plan.match(/>Yin yoga workshop</g)).toHaveLength(1);
     expect(plan).toContain('<span class="more">+1 dato</span>');
@@ -211,7 +212,7 @@ describe("the portal", () => {
     expect(await titles("/ostjylland/sog?q=hjerterum%20lydbad")).toEqual(["Lydbad med gongs &lt;3 &amp; &quot;ro&quot;"]);
     expect(await titles("/ostjylland/sog?q=%25")).toEqual([]);
     expect(await (await call("/ostjylland/sog?q=qwerty")).text()).toContain("Intet fundet");
-    expect(await (await call("/ostjylland/sog")).text()).toContain("vælg et tema");
+    expect(await (await call("/ostjylland/sog")).text()).toContain("vælg en kategori");
     const kakao = await db.prepare("SELECT id FROM events WHERE source_uid = 'hj-1'").first<{ id: number }>();
     const saved = await call(`/ostjylland/gemt?ids=${kakao!.id},99999,abc`);
     expect(saved.headers.get("cache-control")).toBe("private, no-store");

@@ -41,4 +41,4 @@ export function fakeWeb(routes: Record<string, string | ((url: string) => Respon
 }
 
 export const testDeps = (fetcher: typeof fetch, now = NOW): Deps => ({ fetcher, now: () => now, sleep: async () => undefined });
-export const testEnv = (db: D1Database, extra: Partial<Env> = {}): Env => ({ DB: db, ADMIN_PASSWORD: "hemmelig-test", SITE_NAME: "Eventportal", ...extra });
+export const testEnv = (db: D1Database, extra: Partial<Env> = {}): Env => ({ DB: db, ADMIN_PASSWORD: "hemmelig-test", SITE_NAME: "Socialklubben", ...extra });

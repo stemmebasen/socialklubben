@@ -4,7 +4,11 @@ This is the primary product and technical specification of the portal. Update it
 
 ## 1. What it is
 
-The portal is a public website, with a social media profile to follow, that gives one overview of what goes on within spirituality, personal development and mental health in a geographic region. It starts with **Østjylland**. It has a list by day, filters and a map with a radius.
+**Socialklubben** (socialklubben.dk) is a public website and app, with a social media profile to follow, that gives one overview of the cultural life in a region: music, stage, film, art, talks, literature, food, body and mind, sport, workshops, communities, markets and nightlife, small and large. It covers all of **Østjylland**. It has a map, a list by day, filters and search.
+
+The concept is also that people can join a circle and go to events together. How circles work is not decided yet (decision 0006).
+
+It started as a portal for mental health, personal development and spirituality (decisions 0001-0002) and was widened on 2026-10-17.
 
 It started from Hjerterum's Partnerplan (`stemmebasen/hjerterum`, `docs/PARTNERPLAN.md`). Rather than showing partners inside Hjerterum's own calendar, the overview is a separate, neutral site. Hjerterum's events and its partners' events are shown alike.
 
@@ -27,7 +31,7 @@ The website is the backbone; the presence around it is the product.
 ## 3. Non-negotiable principles
 
 1. **Curated.** Organizers are added only by the administration, after an assessment. The criteria:
-   - the events are relevant to the portal's themes;
+   - the events are public cultural or social events in the region;
    - the organizer is serious and professional, and active in the region;
    - the events are public and bookable by anyone;
    - the descriptions are of reasonable quality.
@@ -35,7 +39,7 @@ The website is the backbone; the presence around it is the product.
 2. **Neutral and alike.** The site is tied to no organizer. No organizer's name, logo or colours appear in its frame. Events are ordered by time, never by who arranges them.
 3. **The organizer's own calendar is the truth.** The portal only reads it. Organizers keep their own brand, signup, payment, members and data. Every way on goes to the organizer.
 4. **No friction for organizers.** Once an organizer is accepted, one public calendar address (iCal/.ics or RSS) is all that is asked. After that, the organizer does nothing.
-5. **Professional, modern and elegant, not spiritual.** Requested: "siden må ikke have en spirituel vibe, den skal være professionel, moderne og elegant" (section 5).
+5. **Professional, modern and elegant.** Requested: "den skal være professionel, moderne og elegant" (section 5).
 6. **Nothing is guessed.** A price is shown only when the event text states it plainly next to a price label and a currency. A theme comes from plain words, with no AI. A place comes from its address, and the administration can correct it.
 7. **Privacy.** No cookies or tracking for visitors. "Nær mig" is the browser's position put in the page address. It is never stored, and such pages are never cached in shared caches. Clicks on to organizers are counted per day, without anything about who clicked.
 8. **Small steps.** Build only what the next step needs. Expand when there is real use.
@@ -47,11 +51,11 @@ The website is the backbone; the presence around it is the product.
   - a name and a website;
   - a default address, for events that only name the house;
   - a default theme;
-  - optional include and exclude words, for calendars that hold more than the portal's themes;
+  - optional include and exclude words, for calendars that hold more than belongs here;
   - a status: active or paused.
   Each active calendar is read once an hour, with at most 300 events per calendar, 180 days ahead and 3 MB per calendar. New, changed, cancelled (`STATUS:CANCELLED`), removed and past events follow by themselves. A failing calendar never removes what is shown, and the error is shown in the administration. Repeating iCal series (`RRULE`) are counted and named, not shown yet. Private or confidential iCal events are never shown.
 - **Places.** Each distinct address is one venue. It is looked up once from OpenStreetMap Nominatim (Denmark only, at most 8 per run, about one a second, at most 3 tries) and kept. An event location without a number is a name, not an address ("Hjerterum"), so the organizer's default address is used. Online events have no place. The administration can set coordinates by hand, and a later lookup never overwrites them.
-- **Themes**, shown in this order: Mental sundhed, Selvudvikling, Krop & bevægelse, Meditation & mindfulness, Lyd & musik, Fællesskab, Spiritualitet. They have plain names, with the professional framing first. An event's theme comes from the first theme whose words appear in its title, then its text, then the organizer's default. The order themes are matched in is fixed in `src/topics.ts` and is separate from the order they are shown in.
+- **Categories** (decision 0006), shown in this order: Musik & koncerter; Scene: teater, dans & comedy; Film; Kunst & udstillinger; Foredrag & debat; Litteratur; Mad & drikke; Krop & sind; Sport & friluft; Kreative workshops; Fællesskab; Marked & loppemarked; Fest & natteliv. An event's category comes from the first category whose words appear in its title, then its text, then the organizer's default. Short words only count when they stand alone ("bar", not "barn"). The order they are matched in is fixed in `src/topics.ts` and is separate from the order they are shown in.
 - **Public pages.** There are four views, as tabs at the bottom on a phone and in the menu on a larger screen (decision 0003):
   - **Udforsk** (`/ostjylland`) is the region on a map with a sheet over it. The sheet shows the next 14 days as bars, the chosen day's events as cards, and plain filters: all, with an address, online, free; theme; and "Hvor længe?" (up to 2½ hours, half a day, a whole day, several days). A length is shown only when the calendar gives an end time. Pins are ink with the theme's glyph, and close pins are gathered with a count. When the map moves, the bars, the day's count and the cards only count what is in view, and the area is named after the nearest town.
   - **Planlæg** (`/ostjylland/planlaeg`) is the list by day, with filters for when (i dag, weekend from Friday 16, 7 dage, 30 dage, alle), theme, town or "Nær mig", and radius (5, 10, 25 or 50 km). A series (the same title from the same organizer) is shown once, on its first date, with "+N datoer". Old links with list filters on `/ostjylland` go on here.
@@ -71,10 +75,10 @@ The website is the backbone; the presence around it is the product.
 
 ## 5. Design and tone
 
-The site is **professional, modern and elegant, and has no spiritual vibe.** The portal covers spirituality among other themes, but it is a calm, trustworthy guide, not a spiritual brand.
+The site is **professional, modern and elegant**: a calm, trustworthy guide to what goes on, for everyone.
 
 - **The visual system** is the clean part of Hjerterum's board cockpit: cool paper, white cards, deep ink, one cobalt accent, Bricolage Grotesque, pill buttons and a glass header. There is no glow, no gradients in aura colours (violet, turquoise) and no ornaments. Mandalas, lotus flowers, chakras, moons, stars, soft-focus photos and esoteric typefaces are never used. The brand is a plain wordmark with the region in small capitals. A logo comes with the final name.
-- **The language** is editorial and plain. It leads with what people do: "Foredrag, kurser og workshops inden for mental sundhed, selvudvikling og spiritualitet". Theme names are plain ("Spiritualitet", not "Spiritualitet & ceremoni"). The portal's own text makes no promises of healing, energy or transformation. Organizers' event texts are their own and are shown as they wrote them.
+- **The language** is editorial and plain. It leads with what people do: "Koncerter, teater, udstillinger, foredrag, fællesspisning og meget mere". Category names are plain. The site's own text makes no promises on organizers' behalf. Organizers' event texts are their own and are shown as they wrote them.
 - **The layout** has a dark mode. Phones get a single column with the map above the list and filter chips that scroll sideways.
 - **Printed material** (posters, brochures) follows the same system: typographic, generous white space, one accent colour, and a QR code.
 

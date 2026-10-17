@@ -9,7 +9,7 @@ const ics = (...events: string[]) => ["BEGIN:VCALENDAR", "VERSION:2.0", ...event
 const vevent = (uid: string, title: string, start: string, ...extra: string[]) =>
   ["BEGIN:VEVENT", `UID:${uid}`, `SUMMARY:${title}`, `DTSTART;TZID=Europe/Copenhagen:${start}`, ...extra, "END:VEVENT"].join("\r\n");
 const input = (extra: Partial<SourceInput> = {}): SourceInput => ({ name: "Yogahuset", website: "https://yogahuset.example/", feedUrl: FEED,
-  defaultAddress: "Vestergade 10, 8000 Aarhus C", defaultTopic: "krop", includeWords: null, excludeWords: null, contactEmail: null, note: null, ...extra });
+  defaultAddress: "Vestergade 10, 8000 Aarhus C", defaultTopic: "krop-sind", includeWords: null, excludeWords: null, contactEmail: null, note: null, ...extra });
 const rows = async (db: D1Database) => (await db.prepare(`SELECT e.title, e.topic, e.price_minor, e.online, e.removed_at_ms IS NOT NULL AS removed, v.address
   FROM events e LEFT JOIN venues v ON v.id = e.venue_id ORDER BY e.starts_at_ms`).all<Record<string, unknown>>()).results ?? [];
 
@@ -22,11 +22,11 @@ function calendar(initial: string) {
 describe("an organizer's calendar in the portal", () => {
   it("reads the administration's form and refuses what cannot work", () => {
     const form = (fields: Record<string, string>) => { const f = new FormData(); for (const [k, v] of Object.entries(fields)) f.append(k, v); return f; };
-    expect(sourceInput(form({ name: " Yogahuset ", feed_url: "webcal://yogahuset.example/k.ics", default_topic: "krop", website: "yogahuset.example" })))
+    expect(sourceInput(form({ name: " Yogahuset ", feed_url: "webcal://yogahuset.example/k.ics", default_topic: "krop-sind", website: "yogahuset.example" })))
       .toMatchObject({ ok: true, value: { name: "Yogahuset", feedUrl: "https://yogahuset.example/k.ics", website: "https://yogahuset.example/" } });
-    expect(sourceInput(form({ name: "X", feed_url: "http://x.example/k.ics", default_topic: "krop" }))).toMatchObject({ ok: false });
-    expect(sourceInput(form({ name: "X", feed_url: "https://x.example/k.ics", default_topic: "golf" }))).toEqual({ ok: false, error: "Vælg det tema, arrangøren oftest har." });
-    expect(sourceInput(form({ name: "", feed_url: "https://x.example/k.ics", default_topic: "krop" }))).toEqual({ ok: false, error: "Skriv arrangørens navn." });
+    expect(sourceInput(form({ name: "X", feed_url: "http://x.example/k.ics", default_topic: "krop-sind" }))).toMatchObject({ ok: false });
+    expect(sourceInput(form({ name: "X", feed_url: "https://x.example/k.ics", default_topic: "golf" }))).toEqual({ ok: false, error: "Vælg den kategori, arrangøren oftest har." });
+    expect(sourceInput(form({ name: "", feed_url: "https://x.example/k.ics", default_topic: "krop-sind" }))).toEqual({ ok: false, error: "Skriv arrangørens navn." });
   });
 
   it("brings the coming events in with theme, price and place, and leaves out what is past, far ahead, private or repeating", async () => {
@@ -41,10 +41,10 @@ describe("an organizer's calendar in the portal", () => {
     expect(await syncSource(db, testDeps(fetcher), (await getSource(db, id))!)).toMatchObject({ ok: true, coming: 3, written: 3,
       message: "3 kommende events (iCal) · 1 gentagen serie vises ikke endnu" });
     expect(await rows(db)).toEqual([
-      { title: "Yin yoga workshop", topic: "krop", price_minor: 25_000, online: 0, removed: 0, address: "Yogahuset, Vestergade 10, 8000 Aarhus C" },
+      { title: "Yin yoga workshop", topic: "krop-sind", price_minor: 25_000, online: 0, removed: 0, address: "Yogahuset, Vestergade 10, 8000 Aarhus C" },
       // "Yogahuset" alone is a name: the organizer's house is used - and it is the same place, found once.
-      { title: "Lydbad", topic: "lyd", price_minor: null, online: 0, removed: 0, address: "Vestergade 10, 8000 Aarhus C" },
-      { title: "Mindfulness online", topic: "meditation", price_minor: null, online: 1, removed: 0, address: null }]);
+      { title: "Lydbad", topic: "krop-sind", price_minor: null, online: 0, removed: 0, address: "Vestergade 10, 8000 Aarhus C" },
+      { title: "Mindfulness online", topic: "krop-sind", price_minor: null, online: 1, removed: 0, address: null }]);
   });
 
   it("follows changes, cancellations and removals, and keeps a hidden event hidden", async () => {

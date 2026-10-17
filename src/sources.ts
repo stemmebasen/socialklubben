@@ -44,7 +44,7 @@ export function sourceInput(form: FormData): { ok: true; value: SourceInput } | 
   const feedUrl = feedText ? webUrl(feedText, true) : "";
   if (feedUrl === null) return { ok: false, error: "Kalenderadressen skal begynde med https:// (eller webcal://), eller stå tom for en arrangør uden kalender." };
   const defaultTopic = field(form, "default_topic", 40);
-  if (!isTopic(defaultTopic)) return { ok: false, error: "Vælg det tema, arrangøren oftest har." };
+  if (!isTopic(defaultTopic)) return { ok: false, error: "Vælg den kategori, arrangøren oftest har." };
   const contactEmail = field(form, "contact_email", 200).toLowerCase() || null;
   if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) return { ok: false, error: "Kontaktens e-mail ser forkert ud." };
   return { ok: true, value: { name, website, feedUrl, defaultTopic, contactEmail, defaultAddress: field(form, "default_address", 200) || null,
@@ -117,7 +117,7 @@ export async function syncSource(db: D1Database, deps: Pick<Deps, "fetcher" | "n
   let text: string | null;
   try {
     const response = await deps.fetcher(source.feed_url, { redirect: "follow", signal: AbortSignal.timeout(15_000),
-      headers: { accept: "text/calendar, application/rss+xml, application/xml;q=0.9, */*;q=0.5", "user-agent": "Eventportal kalenderlæser" } });
+      headers: { accept: "text/calendar, application/rss+xml, application/xml;q=0.9, */*;q=0.5", "user-agent": "Socialklubben kalenderlæser" } });
     if (!response.ok) return finish({ ok: false, message: `Kalenderen svarede med fejl ${response.status}. De viste events er beholdt.`, coming: 0, written: 0 });
     text = await readLimited(response, MAX_FEED_BYTES);
   } catch (error) {

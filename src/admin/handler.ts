@@ -115,7 +115,7 @@ export async function handleAdmin(request: Request, env: Env, deps: Deps): Promi
       if (!name) return redirect("/admin/fund?besked=navn");
       const existing = await db.prepare("SELECT id FROM sources WHERE name = ? COLLATE NOCASE").bind(name).first<{ id: number }>();
       const website = candidate.link ? webUrl(new URL(candidate.link).origin) : null;
-      const id = existing?.id ?? await createSource(db, { name, website, feedUrl: "", defaultAddress: null, defaultTopic: isTopic(topic) ? topic : "udvikling", includeWords: null, excludeWords: null,
+      const id = existing?.id ?? await createSource(db, { name, website, feedUrl: "", defaultAddress: null, defaultTopic: isTopic(topic) ? topic : "faellesskab", includeWords: null, excludeWords: null,
         contactEmail: null, note: candidate.origin === "tip" ? "Oprettet fra et tip." : "Oprettet fra scanneren." }, now);
       source = (await getSource(db, id))!;
     }

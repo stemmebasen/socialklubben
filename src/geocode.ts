@@ -34,7 +34,7 @@ export async function venueFor(db: D1Database, address: string | null): Promise<
 export async function lookup(env: Env, deps: Deps, address: string): Promise<{ lat: number; lng: number } | null> {
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=dk&q=${encodeURIComponent(address)}`;
   const response = await deps.fetcher(url, { signal: AbortSignal.timeout(10_000),
-    headers: { accept: "application/json", "accept-language": "da", "user-agent": `${env.SITE_NAME?.trim() || "Eventportal"} (${env.GEOCODER_CONTACT?.trim() || "kontakt ikke angivet"})` } });
+    headers: { accept: "application/json", "accept-language": "da", "user-agent": `${env.SITE_NAME?.trim() || "Socialklubben"} (${env.GEOCODER_CONTACT?.trim() || "kontakt ikke angivet"})` } });
   if (!response.ok) throw new Error(`geocoder_${response.status}`);
   const [hit] = await response.json() as Array<{ lat?: string; lon?: string }>;
   const lat = Number(hit?.lat), lng = Number(hit?.lon);

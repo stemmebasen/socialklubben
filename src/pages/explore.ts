@@ -4,7 +4,7 @@ import type { Region } from "../geo.js";
 import { SHOWN_TOPICS, isTopic, topicLabel } from "../topics.js";
 import { clock, esc, page, scriptJson } from "./layout.js";
 import { eventPath, placeText } from "./region.js";
-import { icon, iconPaths, priceText } from "./ui.js";
+import { COLORS, icon, iconPaths, priceText } from "./ui.js";
 
 /** Udforsk: the region on a map, with a sheet over it - the next 14 days as bars, the chosen day's events
  * as cards, and a few plain filters. The server draws all of it from the address, so it works without
@@ -70,9 +70,7 @@ body.explore-page header.bar{position:fixed;left:0;right:0}
 .pin{position:relative;width:44px;height:44px;border-radius:50% 50% 50% 8px;transform:rotate(-45deg);background:#1d2733;box-shadow:0 6px 16px -6px rgba(0,0,0,.55),0 0 0 1.5px rgba(255,255,255,.14) inset;display:grid;place-items:center;transition:transform .15s}
 .pin svg{transform:rotate(45deg);color:var(--t)}.pin b{position:absolute;top:-6px;right:-8px;transform:rotate(45deg);min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#fff;color:#16202e;font:700 12.5px/22px var(--font);text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .pin.on{transform:rotate(-45deg) scale(1.18)}
-.pin[data-t]{--t:var(--t-dk)}
-${SHOWN_TOPICS.map(t => `.pin[data-t="${t.slug}"]{--t-dk:var(--td-${t.slug})}`).join("")}
-:root{--td-mental-sundhed:#8ea2ff;--td-udvikling:#c3ccd8;--td-krop:#5fcf95;--td-meditation:#79b3dd;--td-lyd:#f2a54a;--td-cirkler:#f08a72;--td-spiritualitet:#e3c35a}
+${Object.entries(COLORS).map(([t, [, dark]]) => `.pin[data-t="${t}"]{--t:${dark}}`).join("")}
 .deck{position:absolute;z-index:900;display:flex;gap:10px;scrollbar-width:none}
 .deck::-webkit-scrollbar{display:none}
 .sheet,.ev-card,.empty-card{background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border-radius:26px;box-shadow:0 18px 40px -18px rgba(10,16,26,.45);border:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
@@ -162,7 +160,7 @@ export function explorePage(env: Env, origin: string, region: Region, events: Sh
 <span class="col"><i style="--h:${Math.round((counts[i]! / max) * 100)}%"></i></span><b>${esc(d.letter)}</b><span>${d.date}</span></a>`).join("");
   const lengths = `<details class="dur"><summary>${esc(q.length ? LENGTHS.find(([l]) => l === q.length)![1] : "Hvor længe?")} ›</summary><div>
 <a href="${esc(href({ varighed: null }))}" data-varighed=""${q.length ? "" : ' class="on"'}>Alle længder</a>${LENGTHS.map(([l, label]) => `<a href="${esc(href({ varighed: l }))}" data-varighed="${l}"${q.length === l ? ' class="on"' : ""}>${esc(label)}</a>`).join("")}</div></details>`;
-  const chips = `<a class="all${q.topic ? "" : " on"}" href="${esc(href({ tema: null }))}" data-tema="">Alle temaer</a>${SHOWN_TOPICS.map(t => `<a data-t="${t.slug}" data-tema="${t.slug}" href="${esc(href({ tema: t.slug }))}"${q.topic === t.slug ? ' class="on"' : ""}>${esc(t.label)}</a>`).join("")}`;
+  const chips = `<a class="all${q.topic ? "" : " on"}" href="${esc(href({ tema: null }))}" data-tema="">Alle kategorier</a>${SHOWN_TOPICS.map(t => `<a data-t="${t.slug}" data-tema="${t.slug}" href="${esc(href({ tema: t.slug }))}"${q.topic === t.slug ? ' class="on"' : ""}>${esc(t.label)}</a>`).join("")}`;
   const cards = today.length ? today.map(e => card(e, day)).join("") : `<div class="empty-card"><p>Ingen events ${esc(day.label.toLocaleLowerCase("da-DK"))} med de valg.</p></div>`;
 
   const data = { region: { name: region.name, lat: region.lat, lng: region.lng }, towns: region.towns.map(t => ({ n: t.name, la: t.lat, ln: t.lng })),
@@ -171,7 +169,7 @@ export function explorePage(env: Env, origin: string, region: Region, events: Sh
     labels: Object.fromEntries(SHOWN_TOPICS.map(t => [t.slug, t.label])), icons: iconPaths([...SHOWN_TOPICS.map(t => t.slug), "gemt"]) };
 
   return page(env, origin, { title: `Det sker i ${region.name} · ${siteName(env)}`, path: `/${region.slug}`, section: "udforsk", regionSlug: region.slug, regionName: region.name,
-    description: `Foredrag, kurser og workshops inden for mental sundhed, selvudvikling og spiritualitet i ${region.name} - på et kort, dag for dag.`,
+    description: `Koncerter, teater, udstillinger, foredrag, fællesspisning og meget mere i ${region.name} - på et kort, dag for dag.`,
     bodyClass: "explore-page", noFooter: true, head: `<link rel="stylesheet" href="/vendor/leaflet/leaflet.css"><style>${STYLE}</style>`,
     scripts: ["/vendor/leaflet/leaflet.js", "/explore.js"],
     body: `<main class="explore"><div class="map-pane"><div id="map" aria-label="Kort over events"></div></div>
@@ -179,6 +177,6 @@ export function explorePage(env: Env, origin: string, region: Region, events: Sh
 <div class="deck" id="deck"><section class="sheet" aria-label="Overblik"><div class="sheet-head"><h1 id="area">${esc(region.name)}</h1><nav class="seg" aria-label="Slags">${seg}</nav></div>
 <nav class="bars" aria-label="De næste 14 dage">${bars}</nav>
 <div class="dayline"><span id="daytext"><b>${esc(day.label)}</b> <span class="n">· ${today.length} event${today.length === 1 ? "" : "s"}</span></span>${lengths}</div>
-<nav class="chips" aria-label="Tema">${chips}</nav></section><div id="cards" style="display:contents">${cards}</div></div>
+<nav class="chips" aria-label="Kategori">${chips}</nav></section><div id="cards" style="display:contents">${cards}</div></div>
 <script type="application/json" id="explore-data">${scriptJson(data)}</script></main>` });
 }

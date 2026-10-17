@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: eventportal-staging
+  group: socialklubben-staging
   cancel-in-progress: true
 
 jobs:
@@ -40,14 +40,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          find_id() { pnpm exec wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{const l=JSON.parse(s);const a=Array.isArray(l)?l:(l.result??[]);const d=a.find(x=>(x.name??x.database_name)==="eventportal-staging");process.stdout.write(d?(d.uuid??d.database_id??""):"")})'; }
+          find_id() { pnpm exec wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{const l=JSON.parse(s);const a=Array.isArray(l)?l:(l.result??[]);const d=a.find(x=>(x.name??x.database_name)==="socialklubben-staging");process.stdout.write(d?(d.uuid??d.database_id??""):"")})'; }
           ID="$(find_id)"
-          if [ -z "$ID" ]; then pnpm exec wrangler d1 create eventportal-staging --location weur >/dev/null; ID="$(find_id)"; fi
+          if [ -z "$ID" ]; then pnpm exec wrangler d1 create socialklubben-staging --location weur >/dev/null; ID="$(find_id)"; fi
           test -n "$ID"
           sed -i "s/SET-BY-DEPLOY/$ID/" wrangler.jsonc
       - name: Apply migrations
         if: steps.credentials.outputs.cloudflare == 'true'
-        run: pnpm exec wrangler d1 migrations apply eventportal-staging --remote --env staging
+        run: pnpm exec wrangler d1 migrations apply socialklubben-staging --remote --env staging
       - name: Deploy
         if: steps.credentials.outputs.cloudflare == 'true'
         run: pnpm run deploy:staging

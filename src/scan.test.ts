@@ -47,7 +47,7 @@ describe("reading a page", () => {
     expect(robotsAllow(robots, "/admin/x")).toBe(false);
     expect(robotsAllow(robots, "/events/private/x")).toBe(false);
     expect(robotsAllow(robots, "/events/private/open/1")).toBe(true);
-    expect(robotsAllow("User-agent: eventportal-scanner\nDisallow: /\n\nUser-agent: *\nDisallow:", "/events")).toBe(false);
+    expect(robotsAllow("User-agent: socialklubben-scanner\nDisallow: /\n\nUser-agent: *\nDisallow:", "/events")).toBe(false);
     expect(robotsAllow("User-agent: *\nDisallow: /*.pdf$", "/a.pdf")).toBe(false);
   });
 });
@@ -87,14 +87,14 @@ describe("the scanner", () => {
     expect(calls.filter(c => c === "https://studie.example/events").length).toBeGreaterThanOrEqual(1);
 
     const yin = await db.prepare("SELECT id FROM candidates WHERE title LIKE 'Yin%'").first<{ id: number }>();
-    const approved = await call(`/admin/fund/${yin!.id}`, { method: "POST", cookie, body: form({ action: "approve", source: "ny", new_name: "Studie Ro", topic: "krop", address: "" }) });
+    const approved = await call(`/admin/fund/${yin!.id}`, { method: "POST", cookie, body: form({ action: "approve", source: "ny", new_name: "Studie Ro", topic: "krop-sind", address: "" }) });
     expect(approved.headers.get("location")).toBe("/admin/fund?besked=vist");
     const plan = await (await call("/ostjylland/planlaeg?nar=alle")).text();
     expect(plan).toContain(">Yin yoga &amp; ro<");
     expect(await db.prepare("SELECT kind, website FROM sources WHERE name = 'Studie Ro'").first()).toEqual({ kind: "manual", website: "https://studie.example/" });
     // The next find from the same organizer goes to the same organizer.
     const kakao = await db.prepare("SELECT id FROM candidates WHERE title = 'Kakaoceremoni'").first<{ id: number }>();
-    await call(`/admin/fund/${kakao!.id}`, { method: "POST", cookie, body: form({ action: "approve", source: "ny", new_name: "studie ro", topic: "spiritualitet" }) });
+    await call(`/admin/fund/${kakao!.id}`, { method: "POST", cookie, body: form({ action: "approve", source: "ny", new_name: "studie ro", topic: "krop-sind" }) });
     expect((await db.prepare("SELECT COUNT(*) AS n FROM sources").first<{ n: number }>())!.n).toBe(1);
     const retreat = await db.prepare("SELECT id FROM candidates WHERE title = 'Retreat'").first<{ id: number }>();
     await call(`/admin/fund/${retreat!.id}`, { method: "POST", cookie, body: form({ action: "reject" }) });
@@ -104,8 +104,8 @@ describe("the scanner", () => {
   it("marks a find that looks like an event already shown, and does not read a page robots.txt closes", async () => {
     const page = `${ld({ "@type": "Event", name: "Yin Yoga & Ro!", startDate: "2026-10-05T19:15:00+02:00" })}`;
     const { db, call, cookie } = await setup({ "https://a.example/robots.txt": "", "https://a.example/": page, "https://b.example/robots.txt": "User-agent: *\nDisallow: /", "https://b.example/": page });
-    await db.prepare("INSERT INTO sources (name, feed_url, default_topic, created_at_ms, updated_at_ms) VALUES ('X', 'https://x.example/cal.ics', 'krop', 0, 0)").run();
-    await db.prepare(`INSERT INTO events (source_id, source_uid, title, starts_at_ms, topic, content_hash, first_seen_at_ms, updated_at_ms) VALUES (1, 'y', 'Yin yoga & ro', ?, 'krop', 'x', 0, 0)`)
+    await db.prepare("INSERT INTO sources (name, feed_url, default_topic, created_at_ms, updated_at_ms) VALUES ('X', 'https://x.example/cal.ics', 'krop-sind', 0, 0)").run();
+    await db.prepare(`INSERT INTO events (source_id, source_uid, title, starts_at_ms, topic, content_hash, first_seen_at_ms, updated_at_ms) VALUES (1, 'y', 'Yin yoga & ro', ?, 'krop-sind', 'x', 0, 0)`)
       .bind(Date.parse("2026-10-05T17:00:00Z")).run();
     await call("/admin/scanner", { method: "POST", cookie, body: form({ url: "https://a.example/" }) });
     expect(await (await call("/admin/fund", { cookie })).text()).toContain("Ligner et event, der allerede vises");

@@ -9,13 +9,19 @@ import { clock, esc } from "./layout.js";
  * The colours are muted and few - ink pins with a coloured glyph - so the site stays calm, not festive. */
 
 const ICON: Record<string, string> = {
-  "mental-sundhed": `<path d="M4 5h16v11H9l-5 4z"/><path d="M9 10.5h6"/>`,
-  udvikling: `<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v13"/>`,
-  krop: `<circle cx="12" cy="4.5" r="2"/><path d="M5 9l7 1 7-1M12 10v5l-4 6M12 15l4 6"/>`,
-  meditation: `<path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14z"/><path d="M5 19l8-8"/>`,
-  lyd: `<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>`,
-  cirkler: `<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5"/>`,
-  spiritualitet: `<path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-2 1-6 1-9z"/>`,
+  musik: `<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>`,
+  scene: `<path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"/><path d="M14 6v2M14 11v2M14 16v2"/>`,
+  film: `<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/>`,
+  kunst: `<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/>`,
+  foredrag: `<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>`,
+  litteratur: `<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v13c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v13"/>`,
+  mad: `<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5a2 2 0 0 0 2 2M9 3v5a2 2 0 0 1-2 2M17 21V3c-2 1-3 4-3 8h3"/>`,
+  "krop-sind": `<path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14z"/><path d="M5 19l8-8"/>`,
+  sport: `<circle cx="12" cy="4.5" r="2"/><path d="M5 9l7 1 7-1M12 10v5l-4 6M12 15l4 6"/>`,
+  workshops: `<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>`,
+  faellesskab: `<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5"/>`,
+  marked: `<path d="M3 9l2-5h14l2 5"/><path d="M3 9h18v1a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v7h14v-7"/>`,
+  natteliv: `<path d="M5 4h14l-7 8z"/><path d="M12 12v8M8 20h8"/>`,
   alle: `<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>`,
   sted: `<path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>`,
   online: `<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>`,
@@ -34,11 +40,17 @@ export const icon = (name: string, size = 20) =>
 /** The glyph's inner markup, for the map script to draw pins with. */
 export const iconPaths = (names: string[]) => Object.fromEntries(names.map(n => [n, ICON[n] ?? ICON.alle!]));
 
-/** Each theme's colour as a CSS variable, light and dark. */
+/** Each category's colour, for a light and a dark page. Pins are ink in both, so they use the dark one. */
+export const COLORS: Record<string, [string, string]> = {
+  musik: ["#b45f06", "#f2a54a"], scene: ["#b8452f", "#f08a72"], film: ["#4b5a6e", "#c3ccd8"], kunst: ["#8a3f72", "#e08cc6"], foredrag: ["#2446d8", "#8ea2ff"],
+  litteratur: ["#7a5c3a", "#d6b48c"], mad: ["#8a6d00", "#e3c35a"], "krop-sind": ["#2f6690", "#79b3dd"], sport: ["#1d7a4d", "#5fcf95"], workshops: ["#0f6f6f", "#5fd0cf"],
+  faellesskab: ["#b23a5b", "#f08aa6"], marked: ["#5a7a1d", "#a9d65f"], natteliv: ["#5b3fb8", "#a993ff"]
+};
+
 export const THEME_STYLE = `
-:root{--t-mental-sundhed:#2446d8;--t-udvikling:#4b5a6e;--t-krop:#1d7a4d;--t-meditation:#2f6690;--t-lyd:#b45f06;--t-cirkler:#b8452f;--t-spiritualitet:#8a6d00}
-@media (prefers-color-scheme:dark){:root{--t-mental-sundhed:#8ea2ff;--t-udvikling:#a9b4c4;--t-krop:#5fcf95;--t-meditation:#79b3dd;--t-lyd:#f2a54a;--t-cirkler:#f08a72;--t-spiritualitet:#d9b84a}}
-[data-t]{--t:var(--accent)}${["mental-sundhed", "udvikling", "krop", "meditation", "lyd", "cirkler", "spiritualitet"].map(t => `[data-t="${t}"]{--t:var(--t-${t})}`).join("")}`;
+:root{${Object.entries(COLORS).map(([t, [light]]) => `--t-${t}:${light}`).join(";")}}
+@media (prefers-color-scheme:dark){:root{${Object.entries(COLORS).map(([t, [, dark]]) => `--t-${t}:${dark}`).join(";")}}}
+[data-t]{--t:var(--accent)}${Object.keys(COLORS).map(t => `[data-t="${t}"]{--t:var(--t-${t})}`).join("")}`;
 
 const WEEKDAY_SHORT = new Intl.DateTimeFormat("da-DK", { timeZone: "Europe/Copenhagen", weekday: "short" });
 /** "TORS. 19.00", "HELE DAGEN". */

@@ -44,7 +44,7 @@ function sourceForm(action: string, v: FormValues, button: string): string {
 <div class="two"><label>Arrangørens navn<input name="name" required maxlength="120" value="${esc(v.name)}"></label><label>Hjemmeside<input name="website" maxlength="300" value="${esc(v.website)}" placeholder="arrangoer.dk"></label></div>
 <label>Kalenderadresse (iCal/.ics eller RSS; tom for en arrangør uden kalender)<input name="feed_url" maxlength="500" value="${esc(v.feed_url)}" placeholder="https://… eller webcal://…"></label>
 <div class="two"><label>Adresse, når et event ikke har sin egen<input name="default_address" maxlength="200" value="${esc(v.default_address)}" placeholder="Gade 1, 8000 Aarhus C"></label>
-<label>Arrangørens typiske tema<select name="default_topic" required>${TOPICS.map(t => `<option value="${t.slug}"${v.default_topic === t.slug ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select></label></div>
+<label>Arrangørens typiske kategori<select name="default_topic" required>${TOPICS.map(t => `<option value="${t.slug}"${v.default_topic === t.slug ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select></label></div>
 <div class="two"><label>Kun events med et af ordene (valgfrit)<input name="include_words" maxlength="300" value="${esc(v.include_words)}" placeholder="fx yoga, meditation"></label>
 <label>Aldrig events med ordene (valgfrit)<input name="exclude_words" maxlength="300" value="${esc(v.exclude_words)}" placeholder="fx generalforsamling, lukket"></label></div>
 <div class="two"><label>Kontakt (e-mail, vises ikke)<input type="email" name="contact_email" maxlength="200" value="${esc(v.contact_email)}"></label><label>Note (vises ikke)<input name="note" maxlength="1000" value="${esc(v.note)}"></label></div>
