@@ -67,7 +67,7 @@ describe("the portal", () => {
 
   it("shows every organizer's coming events alike, by time, with theme, place and price", async () => {
     const { call } = await withTwoOrganizers();
-    const response = await call("/ostjylland?nar=alle");
+    const response = await call("/ostjylland/planlaeg?nar=alle");
     expect(response.status).toBe(200);
     expect(response.headers.get("content-security-policy")).toContain("script-src 'self'");
     const text = await response.text();
@@ -75,31 +75,27 @@ describe("the portal", () => {
     expect(order.every((at, i) => at > 0 && (i === 0 || at > order[i - 1]!))).toBe(true);
     // Outside the region: an event in Copenhagen belongs to another region's page.
     expect(text).not.toContain("Meditation i København");
-    expect(text).toContain("Hjerterum · Guldsmedgade 26B, 8000 Aarhus C");
-    expect(text).toContain("150 kr.");
-    expect(text).toContain(">Spiritualitet</span>");
+    expect(text).toContain("Guldsmedgade 26B, 8000 Aarhus C · 150 kr.");
+    expect(text).toContain("lør. 19.00 · Spiritualitet");
     // Text from a calendar is never markup.
     expect(text).not.toContain("gongs <3");
     expect(text).toContain("Lydbad med gongs &lt;3 &amp; &quot;ro&quot;");
-    const data = JSON.parse(/<script type="application\/json" id="map-data">([\s\S]*?)<\/script>/.exec(text)![1]!);
-    expect(data.points).toHaveLength(2);
-    expect(data.fit).toBe(true);
   });
 
   it("filters by theme, time and distance from a town or the visitor", async () => {
     const { call } = await withTwoOrganizers();
-    const titles = async (path: string) => [...(await (await call(path)).text()).matchAll(/class="ev-title" href="[^"]+">([^<]+)</g)].map(m => m[1]);
-    expect(await titles("/ostjylland?nar=alle&tema=krop")).toEqual(["Yin yoga workshop"]);
-    expect(await titles("/ostjylland?nar=alle&by=aarhus&km=10")).toEqual(["Kakaoceremoni", "Lydbad med gongs &lt;3 &amp; &quot;ro&quot;"]);
-    expect(await titles("/ostjylland?nar=alle&by=silkeborg&km=5")).toEqual(["Yin yoga workshop"]);
-    expect(await titles("/ostjylland?nar=alle&by=silkeborg&km=50")).toHaveLength(3);
-    expect(await titles("/ostjylland?nar=idag")).toEqual([]);
-    expect(await titles("/ostjylland?nar=weekend")).toEqual(["Yin yoga workshop", "Kakaoceremoni"]);
-    const near = await call("/ostjylland?nar=alle&by=naer&lat=56.157&lng=10.211&km=5");
+    const titles = async (path: string) => [...(await (await call(path)).text()).matchAll(/class="row-title">([^<]+)</g)].map(m => m[1]);
+    expect(await titles("/ostjylland/planlaeg?nar=alle&tema=krop")).toEqual(["Yin yoga workshop"]);
+    expect(await titles("/ostjylland/planlaeg?nar=alle&by=aarhus&km=10")).toEqual(["Kakaoceremoni", "Lydbad med gongs &lt;3 &amp; &quot;ro&quot;"]);
+    expect(await titles("/ostjylland/planlaeg?nar=alle&by=silkeborg&km=5")).toEqual(["Yin yoga workshop"]);
+    expect(await titles("/ostjylland/planlaeg?nar=alle&by=silkeborg&km=50")).toHaveLength(3);
+    expect(await titles("/ostjylland/planlaeg?nar=idag")).toEqual([]);
+    expect(await titles("/ostjylland/planlaeg?nar=weekend")).toEqual(["Yin yoga workshop", "Kakaoceremoni"]);
+    const near = await call("/ostjylland/planlaeg?nar=alle&by=naer&lat=56.157&lng=10.211&km=5");
     expect(near.headers.get("cache-control")).toBe("private, no-store");
     expect(await near.text()).toContain("Det sker nær dig");
     // A position outside Denmark is ignored.
-    expect(await (await call("/ostjylland?by=naer&lat=40&lng=10&km=5")).text()).toContain("Det sker i Østjylland");
+    expect(await (await call("/ostjylland/planlaeg?by=naer&lat=40&lng=10&km=5")).text()).toContain("Det sker i Østjylland");
   });
 
   it("shows one event with its place, schema.org data and the way on to the organizer, and counts the click", async () => {
@@ -128,7 +124,7 @@ describe("the portal", () => {
     expect(about).toContain("udvalgt efter relevans og kvalitet");
     expect(about).toContain("mailto:hej@portal.example");
     expect(await (await call("/robots.txt")).text()).toContain("Disallow: /admin");
-    expect((await (await call("/sitemap.xml")).text()).match(/<loc>/g)!.length).toBe(3 + 4);
+    expect((await (await call("/sitemap.xml")).text()).match(/<loc>/g)!.length).toBe(4 + 4);
     expect((await call("/")).headers.get("location")).toBe("/ostjylland");
     expect(await (await call("/health")).json()).toEqual({ status: "ok", database: "ready" });
     expect((await call("/kbh")).status).toBe(404);
@@ -144,10 +140,10 @@ describe("the portal", () => {
     expect(detail).toContain("Hentet");
     expect(detail).toContain("3 kommende events (iCal)");
     await call(`/admin/kilder/${yoga!.id}`, { method: "POST", cookie, body: form({ action: "hide", event: String(yin!.id) }) });
-    expect(await (await call("/ostjylland?nar=alle")).text()).not.toContain("Yin yoga workshop");
+    expect(await (await call("/ostjylland/planlaeg?nar=alle")).text()).not.toContain("Yin yoga workshop");
     expect((await call(`/ostjylland/e/${yin!.id}-yin-yoga-workshop`)).status).toBe(404);
     await call(`/admin/kilder/${yoga!.id}`, { method: "POST", cookie, body: form({ action: "pause" }) });
-    expect(await (await call("/ostjylland?nar=alle")).text()).not.toContain("Mindfulness online");
+    expect(await (await call("/ostjylland/planlaeg?nar=alle")).text()).not.toContain("Mindfulness online");
     const venue = await db.prepare("SELECT id FROM venues WHERE address LIKE '%Silkeborg%'").first<{ id: number }>();
     const set = await call(`/admin/steder/${venue!.id}`, { method: "POST", cookie, body: form({ action: "set", coords: "56,17; 9,55" }) });
     expect(set.headers.get("location")).toBe("/admin/steder?besked=sat");
@@ -164,6 +160,63 @@ describe("the portal", () => {
     expect(calls.slice(before).filter(c => c === HJERTERUM_RSS || c === YOGA_ICS)).toHaveLength(2);
     await runSourceSync(env, { ...deps, now: () => NOW + 3_600_000 });
     expect(calls.slice(before).filter(c => c === HJERTERUM_RSS || c === YOGA_ICS)).toHaveLength(4);
+  });
+
+  it("opens on Udforsk: the next 14 days as bars, the chosen day's events as cards, and the map's data", async () => {
+    const { call } = await withTwoOrganizers();
+    const text = await (await call("/ostjylland")).text();
+    expect(text.match(/data-day="/g)).toHaveLength(14);
+    expect(text).toContain('aria-label="I dag: 0 events"');
+    expect(text).toContain('aria-label="I morgen: 1 events"');
+    const data = JSON.parse(/<script type="application\/json" id="explore-data">([\s\S]*?)<\/script>/.exec(text)![1]!);
+    expect(data.events.map((e: { t: string }) => e.t)).toEqual(["Yin yoga workshop", "Kakaoceremoni", "Mindfulness online", "Lydbad med gongs <3 & \"ro\""]);
+    expect(data.events[0]).toMatchObject({ k: "krop", h: "19.00", v: "kort", p: 25000, d: [1] });
+    // Lydbad has no end in its calendar, so its length is not guessed.
+    expect(data.events[3].v).toBeNull();
+    // A day, a theme and "free" are in the address and work without the map script.
+    const saturday = await (await call("/ostjylland?dag=2026-10-03")).text();
+    expect(saturday).toContain('<h2><a href="/ostjylland/e/');
+    expect(saturday).toContain(">Kakaoceremoni</a>");
+    expect(saturday).not.toContain(">Yin yoga workshop</a>");
+    expect(await (await call("/ostjylland?dag=2026-10-03&slags=online")).text()).toContain("Ingen events lør. 3. med de valg");
+    expect(await (await call("/ostjylland?dag=2026-10-02&tema=krop&varighed=kort")).text()).toContain(">Yin yoga workshop</a>");
+    // Links to the list from before Udforsk go on to Planlæg.
+    expect((await call("/ostjylland?nar=alle&tema=krop")).headers.get("location")).toBe("/ostjylland/planlaeg?nar=alle&tema=krop");
+  });
+
+  it("shows a series once in Planlæg with its other dates, and lists them on the event's page", async () => {
+    const { call, db } = await withTwoOrganizers();
+    const yin = await db.prepare("SELECT * FROM events WHERE source_uid = 'yin'").first<Record<string, unknown>>();
+    const week = 7 * 86_400_000;
+    await db.prepare(`INSERT INTO events (source_id, source_uid, title, starts_at_ms, ends_at_ms, venue_id, topic, content_hash, first_seen_at_ms, updated_at_ms)
+      VALUES (?, 'yin-2', 'Yin yoga workshop', ?, ?, ?, 'krop', 'x', 0, 0)`).bind(yin!.source_id, Number(yin!.starts_at_ms) + week, Number(yin!.ends_at_ms) + week, yin!.venue_id).run();
+    const plan = await (await call("/ostjylland/planlaeg?nar=alle")).text();
+    expect(plan.match(/>Yin yoga workshop</g)).toHaveLength(1);
+    expect(plan).toContain('<span class="more">+1 dato</span>');
+    const page = await (await call(`/ostjylland/e/${yin!.id}-yin-yoga-workshop`)).text();
+    expect(page).toContain("Flere datoer");
+    expect(page).toContain("fredag 9. oktober kl. 19.00");
+    expect(page).toContain(`data-save="${yin!.id}"`);
+  });
+
+  it("searches the coming events, and shows only the saved events it is asked for", async () => {
+    const { call, db } = await withTwoOrganizers();
+    const titles = async (path: string) => [...(await (await call(path)).text()).matchAll(/class="row-title">([^<]+)</g)].map(m => m[1]);
+    expect(await titles("/ostjylland/sog?q=yin")).toEqual(["Yin yoga workshop"]);
+    // The organizer's name counts too.
+    expect(await titles("/ostjylland/sog?q=yogahuset")).toEqual(["Yin yoga workshop", "Mindfulness online"]);
+    expect(await titles("/ostjylland/sog?q=Silkeborg")).toEqual(["Yin yoga workshop"]);
+    expect(await titles("/ostjylland/sog?q=hjerterum%20lydbad")).toEqual(["Lydbad med gongs &lt;3 &amp; &quot;ro&quot;"]);
+    expect(await titles("/ostjylland/sog?q=%25")).toEqual([]);
+    expect(await (await call("/ostjylland/sog?q=qwerty")).text()).toContain("Intet fundet");
+    expect(await (await call("/ostjylland/sog")).text()).toContain("vælg et tema");
+    const kakao = await db.prepare("SELECT id FROM events WHERE source_uid = 'hj-1'").first<{ id: number }>();
+    const saved = await call(`/ostjylland/gemt?ids=${kakao!.id},99999,abc`);
+    expect(saved.headers.get("cache-control")).toBe("private, no-store");
+    const text = await saved.text();
+    expect([...text.matchAll(/class="row-title">([^<]+)</g)].map(m => m[1])).toEqual(["Kakaoceremoni"]);
+    expect(text).toContain(`data-found="${kakao!.id}"`);
+    expect(await (await call("/ostjylland/gemt")).text()).toContain("Intet gemt endnu");
   });
 
   it("knows Copenhagen's days and weekends", () => {

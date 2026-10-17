@@ -1,11 +1,14 @@
 import type { Deps, Env } from "./env.js";
-import { eventById, isWhen, listEvents, organizers, outboundLink, type Filter } from "./events.js";
+import { copenhagenMidnight, eventById, isWhen, listBetween, listEvents, organizers, outboundLink, seriesKey, type Filter } from "./events.js";
+import { WINDOW_DAYS } from "./sources.js";
+import { EXPLORE_DAYS, explorePage, exploreQuery } from "./pages/explore.js";
+import { savedPage, searchPage } from "./pages/find.js";
 import { distanceKm, RADII, region as findRegion, REGIONS, type Region, type Town } from "./geo.js";
 import { isTopic } from "./topics.js";
 import { handleAdmin, isAdminPath } from "./admin/handler.js";
 import { eventPage } from "./pages/event.js";
 import { html } from "./pages/layout.js";
-import { eventPath, regionPage } from "./pages/region.js";
+import { eventPath, planPage } from "./pages/region.js";
 import { aboutPage, notFoundPage, organizersPage } from "./pages/static.js";
 
 /** The portal's routes. Static files (map script, Leaflet) are served by Workers Static Assets before
@@ -42,7 +45,7 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
   const missing = () => html(notFoundPage(env, origin), 404, { "cache-control": "no-store" });
 
   if (url.pathname === "/") return new Response(null, { status: 302, headers: { location: `/${REGIONS[0]!.slug}` } });
-  if (url.pathname === "/robots.txt") return new Response(`User-agent: *\nDisallow: /admin\nDisallow: /ud/\nSitemap: ${origin}/sitemap.xml\n`, { headers: { "content-type": "text/plain; charset=utf-8" } });
+  if (url.pathname === "/robots.txt") return new Response(`User-agent: *\nDisallow: /admin\nDisallow: /ud/\nDisallow: /*/gemt\nDisallow: /*/sog?\nSitemap: ${origin}/sitemap.xml\n`, { headers: { "content-type": "text/plain; charset=utf-8" } });
   if (url.pathname === "/om") return html(aboutPage(env, origin, env.CONTACT_EMAIL?.trim() || null));
   if (url.pathname === "/health") {
     const ready = db ? await db.prepare("SELECT COUNT(*) AS n FROM sources").first<{ n: number }>().then(() => true, () => false) : false;
@@ -51,7 +54,7 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
   if (!db) return new Response("Databasen er ikke forbundet.", { status: 503 });
 
   if (url.pathname === "/sitemap.xml") {
-    const urls = REGIONS.flatMap(r => [`/${r.slug}`, `/${r.slug}/arrangorer`]).concat("/om");
+    const urls = REGIONS.flatMap(r => [`/${r.slug}`, `/${r.slug}/planlaeg`, `/${r.slug}/arrangorer`]).concat("/om");
     const events = ((await db.prepare(`SELECT e.id, e.title, s.region, v.lat, v.lng FROM events e JOIN sources s ON s.id = e.source_id LEFT JOIN venues v ON v.id = e.venue_id
       WHERE s.status = 'active' AND e.hidden = 0 AND e.removed_at_ms IS NULL AND e.starts_at_ms >= ? ORDER BY e.starts_at_ms LIMIT 1000`).bind(now)
       .all<{ id: number; title: string; region: string; lat: number | null; lng: number | null }>()).results ?? []).filter(e => { const r = findRegion(e.region); return r && inRegion(r, e); });
@@ -71,12 +74,29 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
   const r = regionSlug ? findRegion(regionSlug) : null;
   if (!r) return missing();
   if (!rest || rest === "/") {
+    // Links to the list from before Udforsk (filters in the address) go on to Planlæg.
+    if (["nar", "by", "km", "lat", "arr"].some(k => url.searchParams.has(k))) return new Response(null, { status: 302, headers: { location: `/${r.slug}/planlaeg${url.search}` } });
+    const events = await listBetween(db, r, { from: now, to: copenhagenMidnight(now, EXPLORE_DAYS) });
+    return html(explorePage(env, origin, r, events, exploreQuery(url), now));
+  }
+  if (rest === "/planlaeg") {
     const { filter, town, nearMe } = regionFilter(url, r.slug);
     const [events, source] = await Promise.all([listEvents(db, r, filter, now),
       filter.sourceId ? db.prepare("SELECT name FROM sources WHERE id = ? AND status = 'active'").bind(filter.sourceId).first<{ name: string }>() : Promise.resolve(null)]);
     // A position is the visitor's own: such a page is never kept in a shared cache.
-    return html(regionPage(env, origin, { region: r, filter, town, nearMe, events, nowMs: now, sourceName: source?.name ?? null, sourceId: source ? filter.sourceId ?? null : null }),
+    return html(planPage(env, origin, { region: r, filter, town, nearMe, events, nowMs: now, sourceName: source?.name ?? null, sourceId: source ? filter.sourceId ?? null : null }),
       200, nearMe ? { "cache-control": "private, no-store" } : {});
+  }
+  if (rest === "/sog") {
+    const q = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
+    const events = q.length >= 2 ? await listBetween(db, r, { from: now, to: now + WINDOW_DAYS * 86_400_000, query: q }) : null;
+    return html(searchPage(env, origin, r, q, events, now));
+  }
+  if (rest === "/gemt") {
+    // The saved events come from the visitor's own browser, in the address; nothing is kept here.
+    const ids = [...new Set((url.searchParams.get("ids") ?? "").split(",").map(Number).filter(n => Number.isSafeInteger(n) && n > 0))].slice(0, 100);
+    const events = ids.length ? await listBetween(db, r, { from: now, to: now + WINDOW_DAYS * 86_400_000, ids }) : [];
+    return html(savedPage(env, origin, r, url.searchParams.has("ids"), events, now), 200, { "cache-control": "private, no-store" });
   }
   if (rest === "/arrangorer") return html(organizersPage(env, origin, r, await organizers(db, r, now)));
   const eventMatch = /^\/e\/(\d{1,12})(?:-[a-z0-9-]*)?$/.exec(rest);
@@ -85,7 +105,10 @@ export async function handle(request: Request, env: Env, deps: Deps): Promise<Re
     if (!event || event.hidden || event.region !== r.slug || !inRegion(r, event)) return missing();
     const canonical = eventPath(r.slug, event);
     if (url.pathname !== canonical) return new Response(null, { status: 301, headers: { location: canonical } });
-    return html(eventPage(env, origin, r, event, now));
+    // The other coming dates of the same series.
+    const dates = (await listBetween(db, r, { from: now, to: now + WINDOW_DAYS * 86_400_000, sourceId: event.source_id }))
+      .filter(e => e.id !== event.id && seriesKey(e) === seriesKey(event)).slice(0, 12);
+    return html(eventPage(env, origin, r, event, now, dates));
   }
   return missing();
 }

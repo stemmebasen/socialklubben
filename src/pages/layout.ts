@@ -1,4 +1,5 @@
 import { siteName, type Env } from "../env.js";
+import { icon, THEME_STYLE } from "./ui.js";
 
 /** Every page's frame. The cockpit's clean system - cool paper, white cards, deep ink, one cobalt accent,
  * Bricolage Grotesque, pill buttons, a glass header - without its soft glow: requested, "siden må ikke have
@@ -43,10 +44,17 @@ button:hover,.button:hover{filter:brightness(1.08)}button.ghost,.button.ghost{ba
 footer.site{max-width:1240px;margin:0 auto;padding:28px 24px 48px;color:var(--muted);font-size:14px;display:flex;gap:10px 24px;flex-wrap:wrap;justify-content:space-between;border-top:1px solid var(--line)}
 footer.site a{color:var(--muted)}
 [hidden]{display:none!important}
+.tabs{display:none}
+@media (max-width:720px){
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:1200;padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.tabs a{display:grid;justify-items:center;gap:2px;padding:6px 0 2px;font-size:11.5px;font-weight:600;color:var(--faint);text-decoration:none}.tabs a.on{color:var(--accent)}
+body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}nav.main a.tab{display:none}}
 @media (max-width:720px){.top{padding:10px 16px;gap:10px}nav.main a.cal{display:none}.brand b{max-width:46vw;overflow:hidden;text-overflow:ellipsis;display:block}.brand span{display:none}nav.main a{padding:7px 10px;font-size:14px}main{padding:22px 16px 56px}footer.site{padding:24px 16px 40px}.card{padding:20px 18px}}`;
 
+export type Section = "udforsk" | "planlaeg" | "gemt" | "sog" | "arrangorer" | "om";
 export type PageOptions = {
-  title: string; description: string; path: string; body: string; section?: "kalender" | "arrangorer" | "om" | null; regionSlug?: string; regionName?: string;
+  title: string; description: string; path: string; body: string; section?: Section | null; bodyClass?: string; noFooter?: boolean; regionSlug?: string; regionName?: string;
   head?: string; noindex?: boolean; scripts?: string[];
 };
 
@@ -61,13 +69,18 @@ export function page(env: Env, origin: string, o: PageOptions): string {
 <meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#121821" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&display=swap">${o.head ?? ""}
-<style>${STYLE}</style></head><body>
+<style>${STYLE}${THEME_STYLE}</style></head><body${o.bodyClass ? ` class="${esc(o.bodyClass)}"` : ""}>
 <header class="bar"><div class="top"><a class="brand" href="/${esc(region)}"><b>${esc(name)}</b><span>${esc(o.regionName ?? "Østjylland")}</span></a>
-<nav class="main" aria-label="Menu">${nav("kalender", `/${esc(region)}`, "Kalender", "cal")}${nav("arrangorer", `/${esc(region)}/arrangorer`, "Arrangører")}${nav("om", "/om", "Om")}</nav></div></header>
+<nav class="main" aria-label="Menu">${TABS.map(([key, path, label]) => nav(key, `/${esc(region)}${path}`, label, "tab")).join("")}${nav("arrangorer", `/${esc(region)}/arrangorer`, "Arrangører")}${nav("om", "/om", "Om")}</nav></div></header>
 ${o.body}
-<footer class="site"><span>${esc(name)} er en uafhængig oversigt. Alt kommer fra arrangørernes egne kalendere, og tilmelding sker altid hos arrangøren.</span>
-<a href="/om#med">Få jeres events med →</a></footer>${(o.scripts ?? []).map(src => `<script src="${esc(src)}" defer></script>`).join("")}</body></html>`;
+${o.noFooter ? "" : `<footer class="site"><span>${esc(name)} er en uafhængig oversigt. Alt kommer fra arrangørernes egne kalendere, og tilmelding sker altid hos arrangøren.</span>
+<a href="/om#med">Få jeres events med →</a></footer>`}
+<nav class="tabs" aria-label="Visninger">${TABS.map(([key, path, label]) => `<a href="/${esc(region)}${path}"${o.section === key ? ' class="on" aria-current="page"' : ""}>${icon(key, 24)}<span>${label}</span></a>`).join("")}</nav>
+<script src="/app.js" defer></script>${(o.scripts ?? []).map(src => `<script src="${esc(src)}" defer></script>`).join("")}</body></html>`;
 }
+
+/** The four views, as tabs at the bottom on a phone and in the menu on a larger screen. */
+const TABS: Array<[Section, string, string]> = [["udforsk", "", "Udforsk"], ["planlaeg", "/planlaeg", "Planlæg"], ["gemt", "/gemt", "Gemt"], ["sog", "/sog", "Søg"]];
 
 export const HTML_HEADERS: Record<string, string> = {
   "content-type": "text/html; charset=utf-8",

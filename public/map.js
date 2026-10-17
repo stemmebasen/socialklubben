@@ -1,27 +1,9 @@
-// The map on top of the list: one point per place, a popup with that place's events, and the chosen
-// radius as a circle. Text from calendars is set as text, never as HTML. "Nær mig" asks the browser for
-// the position and puts it in the address - it is not stored anywhere.
+// The small map on an event's page: the place, with a popup. Text from calendars is set as text, never
+// as HTML.
 (() => {
   const data = document.getElementById("map-data");
   const el = document.getElementById("map");
   const L = window.L;
-  const near = document.getElementById("near-me");
-  if (near && "geolocation" in navigator) {
-    near.hidden = false;
-    near.addEventListener("click", () => {
-      const form = near.closest("form");
-      near.disabled = true;
-      near.textContent = "Finder dig …";
-      navigator.geolocation.getCurrentPosition(position => {
-        form.querySelector('[data-near="lat"]').value = position.coords.latitude.toFixed(3);
-        form.querySelector('[data-near="lng"]').value = position.coords.longitude.toFixed(3);
-        const by = form.querySelector('select[name="by"]');
-        if (by && !by.querySelector('option[value="naer"]')) by.add(new Option("Nær mig", "naer"), 1);
-        if (by) by.value = "naer";
-        form.submit();
-      }, () => { near.disabled = false; near.textContent = "Position ikke tilgængelig"; }, { timeout: 10000, maximumAge: 600000 });
-    });
-  }
   if (!data || !el || !L) return;
   const map_ = JSON.parse(data.textContent || "{}");
   const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2446d8";

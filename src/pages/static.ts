@@ -8,7 +8,7 @@ import { esc, page } from "./layout.js";
 export function organizersPage(env: Env, origin: string, region: Region, list: Organizer[]): string {
   const items = list.length ? `<ul style="list-style:none;margin:0;padding:0;display:grid;gap:0">${list.map(o => `<li style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--line)">
 <span><b>${esc(o.name)}</b>${o.website ? `<br><a class="small" href="${esc(o.website)}" rel="noopener" target="_blank">${esc(o.website.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</a>` : ""}</span>
-<a class="button ghost" href="/${esc(region.slug)}?nar=alle&amp;arr=${o.id}">${o.coming} kommende</a></li>`).join("")}</ul>` : `<p class="muted">Der er ingen arrangører med endnu.</p>`;
+<a class="button ghost" href="/${esc(region.slug)}/planlaeg?nar=alle&amp;arr=${o.id}">${o.coming} kommende</a></li>`).join("")}</ul>` : `<p class="muted">Der er ingen arrangører med endnu.</p>`;
   return page(env, origin, { title: `Arrangører i ${region.name} · ${siteName(env)}`, path: `/${region.slug}/arrangorer`, section: "arrangorer", regionSlug: region.slug, regionName: region.name,
     description: `De udvalgte foreninger, centre og undervisere i ${region.name}, hvis events vises her - alle på lige fod.`,
     body: `<main><div><h1>Arrangører</h1><p class="lead">De udvalgte foreninger, centre og undervisere i ${esc(region.name)}, hvis events vises her. Alle vises på lige fod, i alfabetisk orden.</p></div>
@@ -25,7 +25,7 @@ export function aboutPage(env: Env, origin: string, contact: string | null): str
 <ul><li>Google Kalender: Indstillinger → kalenderen → "Offentlig adresse i iCal-format"</li><li>Outlook: Kalender → Del → Udgiv → ICS-link</li><li>Hjemmesider og billetsystemer: se efter "Abonnér", "iCal" eller "RSS"</li></ul>
 <p>Derefter skal I ikke gøre mere. Jeres brand, jeres tilmelding og jeres betaling forbliver jeres.</p>
 ${contact ? `<p><a class="button" href="mailto:${esc(contact)}?subject=${encodeURIComponent(`Om at komme med i ${name}`)}">Kontakt os</a></p>` : ""}</div>
-<div class="card"><h2>Privatliv</h2><p>Siden bruger ingen cookies og ingen sporing. Vælger du "Nær mig", bruger din browser din position til at sætte kortet - den gemmes ikke. Vi tæller kun, hvor mange gange et event er åbnet videre til arrangøren, pr. dag og uden at vide hvem.</p></div></main>` });
+<div class="card"><h2>Privatliv</h2><p>Siden bruger ingen cookies og ingen sporing. Vælger du "Nær mig", bruger din browser din position til at sætte kortet - den gemmes ikke. Events, du gemmer, ligger kun i din egen browser. Vi tæller kun, hvor mange gange et event er åbnet videre til arrangøren, pr. dag og uden at vide hvem.</p></div></main>` });
 }
 
 export function notFoundPage(env: Env, origin: string): string {

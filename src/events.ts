@@ -52,21 +52,53 @@ export type Filter = { when: When; topic: string | null; center: { lat: number; 
 
 export async function listEvents(db: D1Database, region: Region, filter: Filter, nowMs: number): Promise<ShownEvent[]> {
   const { from, to } = window(filter.when, nowMs);
+  return listBetween(db, region, { from, to, topic: filter.topic, sourceId: filter.sourceId ?? null, center: filter.center, km: filter.km });
+}
+
+export type Range = { from: number; to: number; topic?: string | null; sourceId?: number | null; center?: { lat: number; lng: number } | null; km?: number | null; query?: string | null; ids?: number[] };
+
+/** The shown events that are on at some point between `from` and `to` - the one query every view uses
+ * (Udforsk, Planlæg, Søg, Gemt), so the rules for what is shown live in one place. */
+export async function listBetween(db: D1Database, region: Region, range: Range): Promise<ShownEvent[]> {
+  const where: string[] = [], values: unknown[] = [];
+  if (range.topic) { where.push("e.topic = ?"); values.push(range.topic); }
+  if (range.sourceId) { where.push("e.source_id = ?"); values.push(range.sourceId); }
+  if (range.ids) { where.push(`e.id IN (${range.ids.map(() => "?").join(",") || "NULL"})`); values.push(...range.ids); }
+  const words = (range.query ?? "").toLocaleLowerCase("da-DK").split(/\s+/).map(w => w.replace(/[%_\\]/g, "")).filter(w => w.length >= 2).slice(0, 5);
+  for (const word of words) {
+    // Every word somewhere: the title, the text, the organizer or the place.
+    where.push("LOWER(e.title || ' ' || COALESCE(e.description, '') || ' ' || s.name || ' ' || COALESCE(e.location, '') || ' ' || COALESCE(v.address, '')) LIKE ?");
+    values.push(`%${word}%`);
+  }
   const rows = await db.prepare(`${SELECT} WHERE s.status = 'active' AND s.region = ? AND e.hidden = 0 AND e.removed_at_ms IS NULL
-      AND COALESCE(e.ends_at_ms, e.starts_at_ms + ?) >= ? AND e.starts_at_ms < ? ${filter.topic ? "AND e.topic = ?" : ""} ${filter.sourceId ? "AND e.source_id = ?" : ""}
+      AND COALESCE(e.ends_at_ms, e.starts_at_ms + ?) >= ? AND e.starts_at_ms < ? ${where.map(w => `AND ${w}`).join(" ")}
       ORDER BY e.starts_at_ms, e.id LIMIT 600`)
-    .bind(region.slug, 3 * HOUR, from, to, ...(filter.topic ? [filter.topic] : []), ...(filter.sourceId ? [filter.sourceId] : [])).all<Omit<ShownEvent, "distance">>();
+    .bind(region.slug, 3 * HOUR, range.from, range.to, ...values).all<Omit<ShownEvent, "distance">>();
   const shown: ShownEvent[] = [];
   for (const row of rows.results ?? []) {
     const placed = row.lat !== null && row.lng !== null ? { lat: row.lat, lng: row.lng } : null;
     // A place found far outside the region belongs to another region's portal.
     if (placed && distanceKm(region, placed) > region.radiusKm) continue;
-    const distance = filter.center && placed ? distanceKm(filter.center, placed) : null;
+    const distance = range.center && placed ? distanceKm(range.center, placed) : null;
     // With a radius chosen, only events with a known place within it - online events have no distance.
-    if (filter.center && filter.km && (distance === null || distance > filter.km)) continue;
+    if (range.center && range.km && (distance === null || distance > range.km)) continue;
     shown.push({ ...row, distance });
   }
   return shown;
+}
+
+/** A series is the same title from the same organizer: shown once, with how many more dates it has. */
+export const seriesKey = (e: Pick<ShownEvent, "source_id" | "title">) => `${e.source_id}:${e.title.trim().toLocaleLowerCase("da-DK")}`;
+
+export function firstOfSeries<T extends Pick<ShownEvent, "source_id" | "title">>(events: T[]): Array<T & { more: number }> {
+  const first = new Map<string, T & { more: number }>();
+  for (const e of events) {
+    const key = seriesKey(e);
+    const seen = first.get(key);
+    if (seen) seen.more++;
+    else first.set(key, { ...e, more: 0 });
+  }
+  return [...first.values()];
 }
 
 export async function eventById(db: D1Database, id: number): Promise<(Omit<ShownEvent, "distance"> & { region: string; removed_at_ms: number | null; hidden: number }) | null> {
