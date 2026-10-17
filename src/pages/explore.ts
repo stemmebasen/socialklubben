@@ -119,7 +119,7 @@ ${SHOWN_TOPICS.map(t => `.pin[data-t="${t.slug}"]{--t-dk:var(--td-${t.slug})}`).
 @media (min-width:721px){
 .explore{top:0}.map-pane{left:448px}
 .deck{top:84px;left:16px;bottom:16px;width:416px;flex-direction:column;overflow-y:auto;padding-bottom:8px}
-.sheet{flex:none}.ev-card{flex:none;grid-template-columns:132px 1fr;grid-template-rows:auto;min-height:132px}.ev-card .badge{top:auto;bottom:10px;left:10px;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;letter-spacing:.04em}.empty-card{flex:none;min-height:120px}
+.sheet{flex:none}.ev-card{flex:none;grid-template-columns:132px 1fr;grid-template-rows:auto;min-height:132px}.ev-card .body{padding-right:54px}.ev-card .badge{top:auto;bottom:10px;left:10px;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;letter-spacing:.04em}.empty-card{flex:none;min-height:120px}
 .leaflet-left{left:0}}
 @media (max-width:720px){
 .deck{left:0;right:0;bottom:calc(68px + env(safe-area-inset-bottom));padding:0 16px 10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px}
