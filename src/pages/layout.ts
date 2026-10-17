@@ -67,6 +67,7 @@ export function page(env: Env, origin: string, o: PageOptions): string {
 <link rel="canonical" href="${esc(origin + o.path)}"><meta property="og:site_name" content="${esc(name)}"><meta property="og:title" content="${esc(o.title)}">
 <meta property="og:description" content="${esc(o.description)}"><meta property="og:url" content="${esc(origin + o.path)}"><meta property="og:locale" content="da_DK">
 <meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#121821" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="${esc(name)}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&display=swap">${o.head ?? ""}
 <style>${STYLE}${THEME_STYLE}</style></head><body${o.bodyClass ? ` class="${esc(o.bodyClass)}"` : ""}>
@@ -86,7 +87,7 @@ export const HTML_HEADERS: Record<string, string> = {
   "content-type": "text/html; charset=utf-8",
   "x-content-type-options": "nosniff",
   "referrer-policy": "strict-origin-when-cross-origin",
-  "content-security-policy": "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  "content-security-policy": "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
   "permissions-policy": "geolocation=(self), camera=(), microphone=()"
 };
 

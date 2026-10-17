@@ -52,6 +52,15 @@
     });
   }
 
+  // As an app: the offline memory, and an install button where the browser offers one.
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  const install = document.getElementById("install");
+  if (install) addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    install.hidden = false;
+    install.onclick = () => { event.prompt(); install.hidden = true; };
+  });
+
   const near = document.getElementById("near-me");
   if (near && "geolocation" in navigator) {
     near.hidden = false;

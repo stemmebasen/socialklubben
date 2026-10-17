@@ -166,6 +166,8 @@ describe("the portal", () => {
     const { call } = await withTwoOrganizers();
     const text = await (await call("/ostjylland")).text();
     expect(text.match(/data-day="/g)).toHaveLength(14);
+    // Installable as an app.
+    expect(text).toContain('<link rel="manifest" href="/manifest.webmanifest">');
     expect(text).toContain('aria-label="I dag: 0 events"');
     expect(text).toContain('aria-label="I morgen: 1 events"');
     const data = JSON.parse(/<script type="application\/json" id="explore-data">([\s\S]*?)<\/script>/.exec(text)![1]!);

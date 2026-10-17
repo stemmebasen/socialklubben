@@ -1,0 +1,21 @@
+{
+  "name": "Eventportal · Østjylland",
+  "short_name": "Eventportal",
+  "description": "Foredrag, kurser og workshops inden for mental sundhed, selvudvikling og spiritualitet i Østjylland.",
+  "lang": "da",
+  "start_url": "/ostjylland",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eef1f4",
+  "theme_color": "#eef1f4",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Planlæg", "url": "/ostjylland/planlaeg", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Gemt", "url": "/ostjylland/gemt", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Søg", "url": "/ostjylland/sog", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

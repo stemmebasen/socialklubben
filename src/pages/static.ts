@@ -25,6 +25,9 @@ export function aboutPage(env: Env, origin: string, contact: string | null): str
 <ul><li>Google Kalender: Indstillinger → kalenderen → "Offentlig adresse i iCal-format"</li><li>Outlook: Kalender → Del → Udgiv → ICS-link</li><li>Hjemmesider og billetsystemer: se efter "Abonnér", "iCal" eller "RSS"</li></ul>
 <p>Derefter skal I ikke gøre mere. Jeres brand, jeres tilmelding og jeres betaling forbliver jeres.</p>
 ${contact ? `<p><a class="button" href="mailto:${esc(contact)}?subject=${encodeURIComponent(`Om at komme med i ${name}`)}">Kontakt os</a></p>` : ""}</div>
+<div class="card" id="app"><h2>Som app på telefonen</h2><p>${esc(name)} kan ligge på din hjemmeskærm som en app. Den åbner direkte i Udforsk, og sider, du har set, kan åbnes uden forbindelse.</p>
+<ul><li>iPhone: åbn siden i Safari, tryk på Del og vælg "Føj til hjemmeskærm".</li><li>Android: åbn siden i Chrome, tryk på menuen og vælg "Installer app".</li></ul>
+<p><button type="button" id="install" hidden>Installer appen</button></p></div>
 <div class="card"><h2>Privatliv</h2><p>Siden bruger ingen cookies og ingen sporing. Vælger du "Nær mig", bruger din browser din position til at sætte kortet - den gemmes ikke. Events, du gemmer, ligger kun i din egen browser. Vi tæller kun, hvor mange gange et event er åbnet videre til arrangøren, pr. dag og uden at vide hvem.</p></div></main>` });
 }
 

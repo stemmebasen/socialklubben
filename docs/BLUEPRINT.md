@@ -61,6 +61,7 @@ The website is the backbone; the presence around it is the product.
   - There is an organizers page (alphabetical) and an about page that explains how organizers get listed.
   - There are also `robots.txt`, `sitemap.xml` and `/health`.
   - Every filter lives in the page address, so pages can be shared and work without JavaScript. The map script only follows the map.
+- **As an app.** The portal can be installed from the browser (a web app: manifest, icons and a service worker). It opens in Udforsk, with Planlæg, Gemt and Søg as shortcuts. Pages are always fetched fresh when there is a connection, and a copy of the last 40 pages seen is kept for offline use. Pages holding a position or saved events, the administration and the way on to organizers are never kept. The about page explains how to install it on an iPhone and on Android. App Store and Google Play versions are a later step, when there is use (decision 0004).
 - **Administration (`/admin`):**
   - It has one password, a signed 30-day cookie, ten wrong tries per quarter of an hour per address, and forms that are only accepted from its own pages.
   - On the source pages you can add, edit, fetch now, pause and hide a single event.
