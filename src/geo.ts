@@ -1,10 +1,13 @@
 /** Where things are: the regions the portal covers (first Østjylland), their towns, and distances. */
 
 export type Town = { slug: string; name: string; lat: number; lng: number };
-export type Region = { slug: string; name: string; lat: number; lng: number; radiusKm: number; towns: Town[] };
+/** start: what the map opens on, before the visitor moves it - the region's main city. */
+export type Region = { slug: string; name: string; lat: number; lng: number; radiusKm: number; towns: Town[]; start: { south: number; west: number; north: number; east: number } };
 
 export const REGIONS: Region[] = [{
   slug: "ostjylland", name: "Østjylland", lat: 56.12, lng: 10.08, radiusKm: 80,
+  // Udforsk opens on Aarhus; zooming out shows the rest of Østjylland.
+  start: { south: 56.125, west: 10.145, north: 56.19, east: 10.255 },
   towns: [
     { slug: "aarhus", name: "Aarhus", lat: 56.1567, lng: 10.2108 },
     { slug: "randers", name: "Randers", lat: 56.4607, lng: 10.0364 },

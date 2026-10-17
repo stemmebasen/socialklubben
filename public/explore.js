@@ -32,9 +32,11 @@
     const r = viewRect();
     return { paddingTopLeft: [24, r.top + 24], paddingBottomRight: [24, r.size.y - r.bottom + 24] };
   };
-  const placed = data.events.filter(e => e.la !== null && e.ln !== null);
-  if (placed.length > 1) map.fitBounds(placed.map(e => [e.la, e.ln]), { ...padding(), maxZoom: 13 });
-  else if (placed.length === 1) map.setView([placed[0].la, placed[0].ln], 13);
+  // It opens on the region's main city (Aarhus); zooming out shows the rest.
+  if (data.start) map.fitBounds(data.start, padding());
+  const named = () => map.getContainer().classList.toggle("named", map.getZoom() >= 13);
+  map.on("zoomend", named);
+  named();
 
   const matches = e => (!state.tema || e.k === state.tema)
     && (state.slags === "alle" || (state.slags === "online" ? e.o === 1 : state.slags === "gratis" ? e.p === 0 : e.o === 0 && e.la !== null))
@@ -85,11 +87,83 @@
     w.className = "when";
     w.textContent = `${day.label} ${e.h}`;
     when.append(w);
+    const name = document.createElement("p");
+    name.className = "name";
+    name.textContent = e.n;
     const where = document.createElement("p");
-    where.textContent = e.w + (e.p === 0 ? " · Gratis" : e.p ? ` · ${(e.p / 100).toLocaleString("da-DK")} kr.` : "");
-    body.append(h, when, where);
+    where.textContent = [e.w, e.p === 0 ? "Gratis" : e.p ? `${(e.p / 100).toLocaleString("da-DK")} kr.` : null].filter(Boolean).join(" · ");
+    body.append(h, when, name);
+    if (where.textContent) body.append(where);
     article.append(cover, badge, save, body);
     return article;
+  }
+
+  // An event opens in a pop-up over the map: the visitor stays where they are.
+  const byId = new Map(data.events.map(e => [e.id, e]));
+  const pop = document.createElement("div");
+  pop.className = "ev-pop";
+  pop.hidden = true;
+  pop.setAttribute("role", "dialog");
+  pop.setAttribute("aria-modal", "true");
+  document.body.append(pop);
+  let lastFocus = null;
+  const closePop = () => { if (pop.hidden) return; pop.hidden = true; pop.replaceChildren(); if (lastFocus) lastFocus.focus(); };
+  pop.addEventListener("click", event => { if (event.target === pop) closePop(); });
+  addEventListener("keydown", event => { if (event.key === "Escape") closePop(); });
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+
+  function openEvent(id) {
+    const e = byId.get(Number(id));
+    if (!e) return;
+    lastFocus = document.activeElement;
+    const day = data.days[state.day];
+    const card = el("div", "ev-pop-card");
+    card.dataset.t = e.k;
+    const top = el("div", "ev-pop-top");
+    top.innerHTML = svg(e.k, 20);
+    top.append(el("span", "", data.labels[e.k] || ""));
+    const close = el("button", "close", "×");
+    close.type = "button";
+    close.setAttribute("aria-label", "Luk");
+    close.addEventListener("click", closePop);
+    const body = el("div", "ev-pop-body");
+    const title = el("h2", "", e.t);
+    title.id = "ev-pop-title";
+    pop.setAttribute("aria-labelledby", title.id);
+    const facts = el("div", "facts");
+    facts.append(el("b", "", `${day.label} ${e.h === "Hele dagen" ? "hele dagen" : `kl. ${e.h}${e.e ? `–${e.e}` : ""}`}`));
+    const where = el("div");
+    where.append(el("b", "", e.n));
+    if (e.w) where.append(el("span", "", ` · ${e.w}`));
+    facts.append(where);
+    if (e.s !== e.n) facts.append(el("span", "", `Arrangør: ${e.s}`));
+    if (e.p !== null) facts.append(el("span", "", e.p === 0 ? "Gratis" : `${(e.p / 100).toLocaleString("da-DK")} kr.`));
+    body.append(title, facts);
+    if (e.x) body.append(el("p", "text", e.x.length >= 900 ? `${e.x.trim()} …` : e.x));
+    const acts = el("div", "acts");
+    const go = el("a", "button", `Læs mere og tilmeld ↗`);
+    go.href = e.r;
+    go.target = "_blank";
+    go.rel = "nofollow noopener";
+    const save = el("button", "save ghost");
+    save.type = "button";
+    save.dataset.save = e.id;
+    save.innerHTML = `${svg("gemt", 18)}<span>Gem</span>`;
+    acts.append(go, save);
+    if (e.la !== null) {
+      const show = el("button", "ghost", "Vis på kortet");
+      show.type = "button";
+      show.addEventListener("click", () => { closePop(); map.flyTo([e.la, e.ln], Math.max(map.getZoom(), 15), { duration: 0.6 }); showCard(e.id); });
+      acts.append(show);
+    }
+    const page = el("a", "more-link", "Eventets egen side");
+    page.href = e.u;
+    body.append(acts, page);
+    card.append(top, close, body);
+    pop.replaceChildren(card);
+    pop.hidden = false;
+    if (window.Saved) window.Saved.mark(pop);
+    close.focus();
   }
 
   function showCard(id) {
@@ -102,8 +176,18 @@
 
   // Events at the same address are opened out in a ring, so each can be tapped.
   let opened = null;
-  const pin = (topic, n, on) => L.divIcon({ className: "", iconSize: [44, 44], iconAnchor: [22, 53],
-    html: `<div class="pin${on ? " on" : ""}" data-t="${topic}">${svg(topic, 22)}${n > 1 ? `<b>${n}</b>` : ""}</div>` });
+  const pin = (topic, n, on, name) => {
+    const wrap = document.createElement("div");
+    wrap.className = "pin-wrap";
+    wrap.innerHTML = `<div class="pin${on ? " on" : ""}" data-t="${topic}">${svg(topic, 22)}${n > 1 ? `<b>${n}</b>` : ""}</div>`;
+    if (name) {
+      const label = document.createElement("span");
+      label.className = "pin-name";
+      label.textContent = name;
+      wrap.append(label);
+    }
+    return L.divIcon({ className: "", iconSize: [44, 44], iconAnchor: [22, 53], html: wrap });
+  };
 
   function drawPins(list) {
     pins.clearLayers();
@@ -125,16 +209,16 @@
           const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
           const at = map.layerPointToLatLng(g.p.add([Math.cos(angle) * radius, Math.sin(angle) * radius]));
           L.polyline([[first.la, first.ln], at], { color: "#1d2733", weight: 1.5, opacity: 0.5, interactive: false }).addTo(pins);
-          L.marker(at, { icon: pin(e.k, 1, false), title: e.t, riseOnHover: true }).addTo(pins).on("click", () => showCard(e.id));
+          L.marker(at, { icon: pin(e.k, 1, false, e.n), title: e.t, riseOnHover: true }).addTo(pins).on("click", () => { showCard(e.id); openEvent(e.id); });
         });
         continue;
       }
       const count = {};
       for (const e of g.events) count[e.k] = (count[e.k] || 0) + 1;
       const topic = Object.keys(count).sort((a, b) => count[b] - count[a])[0];
-      const marker = L.marker([first.la, first.ln], { icon: pin(topic, n, false), title: n > 1 ? `${n} events` : first.t, riseOnHover: true }).addTo(pins);
+      const marker = L.marker([first.la, first.ln], { icon: pin(topic, n, false, n === 1 || g.events.every(e => e.n === first.n) ? first.n : null), title: n > 1 ? `${n} events` : first.t, riseOnHover: true }).addTo(pins);
       marker.on("click", () => {
-        if (n === 1) return showCard(first.id);
+        if (n === 1) { showCard(first.id); return openEvent(first.id); }
         const spread = L.latLngBounds(g.events.map(e => [e.la, e.ln]));
         // Apart on the map: zoom in until they separate. At the same place: open them out.
         if (map.getZoom() < 17 && spread.getNorthEast().distanceTo(spread.getSouthWest()) > 25) map.flyToBounds(spread, { ...padding(), maxZoom: 17, duration: 0.6 });
@@ -186,6 +270,12 @@
     }
   };
   deck.addEventListener("click", event => {
+    // A card opens its event in the pop-up; the save button keeps its own job.
+    const card = event.target.closest && event.target.closest(".ev-card");
+    if (card && !event.target.closest("[data-save]") && !event.metaKey && !event.ctrlKey) {
+      event.preventDefault();
+      return openEvent(card.dataset.id);
+    }
     const a = event.target.closest && event.target.closest("a[data-day], a[data-tema], a[data-slags], a[data-varighed]");
     if (!a) return;
     event.preventDefault();
